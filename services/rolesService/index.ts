@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/explicit-member-accessibility */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 'use strict';
-import moleculer, { Context } from 'moleculer';
-import { Put, Method, Service } from '@ourparentcenter/moleculer-decorators-extended';
+import moleculer, { ActionParams, Context } from 'moleculer';
+import { Put, Method, Service, Post, Get } from '@ourparentcenter/moleculer-decorators-extended';
 import { dbRolesMixin, eventsRolesMixin } from '../../mixins/dbMixins';
 import { Config } from '../../common';
 import {
 	IUserRole,
+	listActionConfig,
 	RestOptions,
 	roleErrorCode,
 	roleErrorMessage,
@@ -14,11 +15,21 @@ import {
 	RolesManipulateValueParams,
 	RolesServiceOptions,
 	UserAuthMeta,
+	UserRoleCreateParams,
+	UserRoleDefault,
 	// UserJWT,
 } from '../../types';
 import { JsonConvert } from 'json2typescript';
 import { /* IUser, */ RolesEntity } from 'entities';
 import { BaseServiceWithDB } from '../../factories';
+import { DbContextParameters } from 'moleculer-db';
+
+const validateRoleBase: ActionParams = {
+	role: 'string',
+	value: 'string',
+	active: { type: 'boolean', optional: true },
+	langKey: { type: 'string', min: 2, max: 5, optional: true },
+};
 
 /**
  * @typedef {import('moleculer').Context} Context Moleculer's Context
@@ -160,21 +171,26 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 	})
 	async activateRole(ctx: Context<RolesManipulateValueParams, UserAuthMeta>) {
 		const { id } = ctx.params;
+		this.logger.debug('♻ Activating role by id');
 		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 		// @ts-ignore
 		delete ctx.params.id;
+		this.logger.debug('♻ Finding role by id: ', id);
 		const role = (await this.adapter.findById(id)) as IUserRole;
 		if (!role) {
+			this.logger.debug(`♻ Role id ${id} not found`);
 			throw new moleculer.Errors.MoleculerClientError(
 				roleErrorMessage.NOT_FOUND,
 				roleErrorCode.NOT_FOUND,
 			);
 		}
+		this.logger.debug(`♻ Found role, activating...`);
 		const parsedEntity = this.removeForbiddenFields(
 			new JsonConvert()
 				.deserializeObject({ ...role, ...ctx.params }, RolesEntity)
 				.getMongoEntity(),
 		);
+		this.logger.debug(`♻ Updating author on role`);
 		const newRole = this.updateAuthor(
 			{
 				...role,
@@ -192,6 +208,7 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 			// {},
 			result,
 		);
+		this.logger.debug(`♻ Returning updated role: `, result);
 		return transform;
 	}
 	/**
@@ -234,8 +251,9 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 	 *    get:
 	 *      tags:
 	 *      - "Roles"
-	 *      summary: Get all roles (auto generated)
+	 *      summary: Get all roles
 	 *      description: Get all roles
+	 *      operationId: listAllUserRoles
 	 *      responses:
 	 *        200:
 	 *          description: Roles result
@@ -269,6 +287,21 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 	 *          description: Server error
 	 *          content: {}
 	 */
+	@Get<RestOptions>('/', {
+		name: 'list',
+		restricted: ['api'],
+		// roles: [UserRoleDefault.SUPERADMIN, UserRoleDefault.ADMIN],
+		...listActionConfig,
+	})
+	async listAllUserRoles(ctx: Context<DbContextParameters, UserAuthMeta>) {
+		const params = this.sanitizeParams(ctx, ctx.params);
+		this.logger.debug('♻ Listing user roles...');
+		const userList = await this._list(
+			ctx,
+			await { ...params, populate: ['createdBy', 'lastModifiedBy'] },
+		);
+		return userList;
+	}
 
 	/**
 	 *  @swagger
@@ -277,8 +310,9 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 	 *    post:
 	 *      tags:
 	 *      - "Roles"
-	 *      summary: Create a role (auto generated)
+	 *      summary: Create a role
 	 *      description: Create a role
+	 *      operationId: createRole
 	 *      requestBody:
 	 *        required: true
 	 *        content:
@@ -326,6 +360,52 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 	 *          content: {}
 	 *      x-codegen-request-body-name: params
 	 */
+	@Post<RestOptions>('/', {
+		name: 'create',
+		/**
+		 * Service guard services allowed to connect
+		 */
+		restricted: ['api'],
+		roles: [UserRoleDefault.SUPERADMIN, UserRoleDefault.ADMIN],
+		params: {
+			...validateRoleBase,
+		},
+	})
+	async createRole(ctx: Context<UserRoleCreateParams, UserAuthMeta>) {
+		this.logger.debug(`♻ Attempting to create role...`);
+		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+		// @ts-ignore
+		const role: UserRoleUpdateParams = await this.adapter.findOne<IUserRole>({
+			role: ctx.params.role,
+		});
+		if (role) {
+			this.logger.debug(
+				`♻ Role ${ctx.params.role} with id ${role.id} already exists. Please update it instead.`,
+			);
+			throw new moleculer.Errors.MoleculerClientError(
+				roleErrorMessage.DUPLICATED_ROLE,
+				roleErrorCode.DUPLICATED_ROLE,
+			);
+		}
+		this.logger.debug(`♻ Creating role ${ctx.params.role}`);
+		const parsedEntity = this.removeForbiddenFields(
+			new JsonConvert().deserializeObject({ ...ctx.params }, RolesEntity).getMongoEntity(),
+		);
+		const newRole = this.updateAuthor(parsedEntity, {
+			creator: ctx.meta.user,
+			modifier: ctx.meta.user,
+		});
+
+		const result = await this._create(ctx, newRole);
+		const transform = await this.transformDocuments(
+			ctx,
+			{ populate: ['createdBy', 'lastModifiedBy'] },
+			// {},
+			result,
+		);
+		this.logger.debug('♻ Returning new role: ', transform);
+		return transform;
+	}
 
 	/**
 	 *  @swagger

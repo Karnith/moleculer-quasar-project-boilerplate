@@ -32,17 +32,6 @@ import { BaseService } from 'factories';
 			name: 'string|min:3',
 		},
 	},
-	actions: {
-		hi() {
-			console.info('Hi from service action');
-			return this.sayHello();
-		},
-	},
-	methods: {
-		sayHello() {
-			return 'Hello from service method';
-		},
-	},
 })
 export default class GreeterService extends BaseService {
 	/**
@@ -70,6 +59,7 @@ export default class GreeterService extends BaseService {
 		restricted: ['api'],
 	})
 	async hello() {
+		this.logger.debug('♻ Returning hello string');
 		return 'Hello Moleculer';
 	}
 	/**
@@ -114,6 +104,7 @@ export default class GreeterService extends BaseService {
 		},
 	})
 	async welcome(ctx: Context<GreeterWelcomeParams, Record<string, unknown>>) {
+		this.logger.debug('♻ Returning Welcome <user name> string');
 		return `Welcome, ${ctx.params.name}`;
 	}
 }

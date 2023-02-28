@@ -38,6 +38,7 @@ export default class GuardService extends BaseService {
 	})
 	public async check(ctx: Context<Record<string, never>>) {
 		const { token, services } = ctx.params;
+		this.logger.debug('♻ Attempting to check JWT...');
 		return await this._verifyJWT(ctx, token, services);
 	}
 
@@ -53,7 +54,7 @@ export default class GuardService extends BaseService {
 	})
 	public async generate(ctx: Context<Record<string, string>>) {
 		const { service } = ctx.params;
-		this.logger.warn('Only for development!');
+		this.logger.warn('Generating service JWT. Use only for development!');
 		return await this._generateJWT(service);
 	}
 
@@ -64,10 +65,11 @@ export default class GuardService extends BaseService {
 	 */
 	@Method
 	private async _generateJWT(service: string) {
+		this.logger.debug('♻ Attempting to generating service JWT...');
 		return new this.Promise((resolve, reject) =>
 			sign({ service }, process.env.API_JWT_SECRET!, (err: unknown, token: unknown) => {
 				if (err) {
-					this.logger.warn('JWT token generation error:', err);
+					this.logger.error('JWT service token generation error:', err);
 					return reject(
 						new MoleculerClientError(
 							'Unable to generate token',
@@ -76,7 +78,7 @@ export default class GuardService extends BaseService {
 						),
 					);
 				}
-
+				this.logger.debug('♻ Returning generated service JWT');
 				resolve(token);
 			}),
 		);
@@ -89,6 +91,7 @@ export default class GuardService extends BaseService {
 		services: unknown[],
 	) {
 		return new this.Promise((resolve, reject) => {
+			this.logger.debug('♻ Attempting to verify service JWT...');
 			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 			// @ts-ignore
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -102,6 +105,7 @@ export default class GuardService extends BaseService {
 					errorHandler(ctx, 'Forbidden service call:');
 					return reject(new MoleculerClientError('Forbidden', 401, 'FORBIDDEN_SERVICE'));
 				}
+				this.logger.debug('♻ Verified service JWT');
 				resolve(token);
 			});
 		});

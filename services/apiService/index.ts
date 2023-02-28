@@ -202,22 +202,23 @@ export default class ApiService extends BaseService {
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 	public onError(req: RequestMessage, res: ServerResponse, err: any): void {
 		// Return with the error as JSON object
-		res.setHeader('Content-type', 'application/json; charset=utf-8');
-		res.writeHead(err.code || 500);
-
-		if (err.code === 422) {
+		res.setHeader('Content-type', 'application/json; charset=utf-8').writeHead(err.code || 500);
+		const error422 = () => {
 			const o: any = {};
 			err.data.forEach((e: any) => {
 				const field = e.field.split('.').pop();
 				o[field] = e.message;
 			});
-
 			res.end(JSON.stringify({ errors: o }, null, 2));
-		} else {
+		};
+		const nonError422 = () => {
 			const errObj = pick(err, ['name', 'message', 'code', 'type', 'data']);
+			// deepcode ignore ServerLeak: errorObj is reduced to only necessary information relayed
 			res.end(JSON.stringify(errObj, null, 2));
-		}
-		this.logResponse(req, res, err ? err.ctx : null);
+		};
+
+		err.code === 422 ? error422() : nonError422();
+		return this.logResponse(req, res, err ? err.ctx : null);
 	}
 
 	/**
@@ -258,31 +259,6 @@ export default class ApiService extends BaseService {
 			},
 		};
 		if (ctx.meta.user) {
-			/* const context = pick(
-				ctx,
-				'nodeID',
-				'id',
-				'event',
-				'eventName',
-				'eventType',
-				'eventGroups',
-				'parentID',
-				'requestID',
-				'caller',
-				'params',
-				'meta',
-				'locals',
-			); */
-			// const action = pick(ctx.action, 'rawName', 'name', 'params', 'rest');
-			/* const logInfo = {
-				action: 'AUTH_FAILURE',
-				details: {
-					error,
-					context,
-					action,
-					meta: ctx.meta,
-				},
-			}; */
 			this.logger.error(logInfo);
 		}
 		this.logger.error(logInfo);

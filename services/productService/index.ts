@@ -128,6 +128,7 @@ export default class ProductService extends BaseServiceWithDB<
 		},
 	})
 	async increaseQuantity(ctx: Context<ProductsManipulateValueParams, Record<string, unknown>>) {
+		this.logger.debug('♻ Increasing product quantity to: ', ctx.params.value);
 		const doc = await this.adapter.updateById(ctx.params.id, {
 			$inc: { quantity: ctx.params.value },
 		});
@@ -194,6 +195,7 @@ export default class ProductService extends BaseServiceWithDB<
 		},
 	})
 	async decreaseQuantity(ctx: Context<ProductsManipulateValueParams, Record<string, unknown>>) {
+		this.logger.debug('♻ Decreasing product quantity to: ', ctx.params.value);
 		const doc = await this.adapter.updateById(ctx.params.id, {
 			$inc: { quantity: -ctx.params.value },
 		});

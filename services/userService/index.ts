@@ -53,7 +53,7 @@ const validateUserBase: ActionParams = {
 	lastName: { type: 'string', optional: true },
 	active: { type: 'boolean', optional: true },
 	roles: { type: 'array', items: 'string', optional: true },
-	langKey: { type: 'string', min: 2, max: 2, optional: true },
+	langKey: { type: 'string', min: 2, max: 5, optional: true },
 };
 
 const validateUserBaseOptional: ActionParams = {
@@ -129,7 +129,7 @@ export default class UserService extends BaseServiceWithDB<UserServiceSettingsOp
 	})
 	async getUserId(ctx: Context<UserGetParams, UserAuthMeta>) {
 		const params = this.sanitizeParams(ctx, ctx.params);
-		this.logger.debug('♻ Attempting to get user from id...');
+		this.logger.debug('♻ Attempting to get user by id...');
 		const result = await this._get(ctx, await params);
 		this.logger.debug('♻ Returning result');
 		return result;
@@ -149,7 +149,7 @@ export default class UserService extends BaseServiceWithDB<UserServiceSettingsOp
 		})) as Record<string, unknown>;
 		this.logger.debug('♻ User found, activating user...');
 		const activateUser = await ctx.call('v1.user.update', { id: foundUser._id, active: true });
-		this.logger.debug('♻ Returning activate duser object');
+		this.logger.debug('♻ Returning activated user object');
 		return activateUser;
 	}
 

@@ -14,8 +14,8 @@ export enum roleErrorMessage {
 	NOT_FOUND = 'role.notfound',
 	WRONG = 'role.wrong',
 	NOT_ACTIVE = 'role.notactive',
-	DUPLICATED_ROLE = 'role.duplicated.login',
-	DUPLICATED_VALUE = 'role.duplicated.email',
+	DUPLICATED_ROLE = 'role.duplicated.name',
+	DUPLICATED_VALUE = 'role.duplicated.value',
 	DELETE_SYSTEMLOCKED = 'role.delete.systemLocked',
 }
 

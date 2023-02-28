@@ -447,8 +447,9 @@ paths:
     get:
       tags:
         - Roles
-      summary: Get all roles (auto generated)
+      summary: Get all roles
       description: Get all roles
+      operationId: listAllUserRoles
       responses:
         '200':
           description: Roles result
@@ -484,8 +485,9 @@ paths:
     post:
       tags:
         - Roles
-      summary: Create a role (auto generated)
+      summary: Create a role
       description: Create a role
+      operationId: createRole
       requestBody:
         required: true
         content:
