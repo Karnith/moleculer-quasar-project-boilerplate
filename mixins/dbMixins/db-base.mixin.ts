@@ -116,11 +116,11 @@ export class DbBaseMixin {
 				if (seedDBFunction) {
 					const count = await this.adapter.count();
 					if (!count) {
-						this.logger.info(
+						this.logger.debug(
 							`The collection for '${this.name}' is empty. Seeding the collection...`,
 						);
 						await seedDBFunction(this.adapter);
-						this.logger.info(
+						this.logger.debug(
 							'Seeding is done. Number of records:',
 							await this.adapter.count(),
 						);

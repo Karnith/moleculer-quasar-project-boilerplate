@@ -4,18 +4,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable complexity */
-/* eslint-disable arrow-parens */
-/* eslint-disable no-shadow */
-/* eslint-disable no-underscore-dangle */
-/* eslint-disable @typescript-eslint/naming-convention */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable complexity */
 /*
- * To use this middleware, please ensure that hot reload is turned off
- * either in molecuer runner by removing the --hot or in the moleculer
- * config file with hotReload: false. This middleware is intended to
- * be used when the project is in a docker instance so that reload
- * functionality will work.
+ * Moleculer
+ * Copyright (c) 2019 MoleculerJS (https://github.com/moleculerjs/moleculer)
+ * MIT Licensed
  */
 
 'use strict';
@@ -30,7 +22,6 @@ const {
 	clearRequireCache,
 	makeDirs,
 	isFunction,
-	isString,
 	// eslint-disable-next-line @typescript-eslint/no-var-requires
 } = require('../node_modules/moleculer/src/utils');
 
@@ -40,8 +31,7 @@ export const HotReloadMiddleware = (broker: any) => {
 
 	let projectFiles = new Map();
 	let prevProjectFiles = new Map();
-	let hotReloadModules: any = [];
-	let extraFiles: any = null;
+	const hotReloadModules: any[] = [];
 
 	const hotReloadService = (service: any) => {
 		const relPath = path.relative(process.cwd(), service.__filename);
@@ -50,12 +40,7 @@ export const HotReloadMiddleware = (broker: any) => {
 
 		return broker.destroyService(service).then(() => {
 			if (fs.existsSync(service.__filename)) {
-				try {
-					return broker.loadService(service.__filename);
-				} catch (err) {
-					broker.logger.error(`Failed to load service '${service.__filename}'`, err);
-					clearRequireCache(service.__filename);
-				}
+				return broker.loadService(service.__filename);
 			}
 		});
 	};
@@ -65,7 +50,7 @@ export const HotReloadMiddleware = (broker: any) => {
 	 *
 	 */
 	const watchProjectFiles = () => {
-		if (!broker.started || !process.mainModule || !require.main) {
+		if (!broker.started || !require.main) {
 			return;
 		}
 
@@ -75,50 +60,25 @@ export const HotReloadMiddleware = (broker: any) => {
 
 		// Read the main module
 		// const mainModule = process.mainModule;
-		const mainModule = process.mainModule || require.main;
+		const mainModule = require.main;
 
 		// Process the whole module tree
 		processModule(mainModule, null, 0, null);
-
-		if (extraFiles != null) {
-			Object.entries(extraFiles).forEach(([fName, restartType]) => {
-				const watchItem = getWatchItem(fName);
-				if (restartType == 'broker') watchItem.brokerRestart = true;
-				else if (restartType == 'allServices') watchItem.allServices = true;
-				else if (isString(restartType)) watchItem.services.push(restartType);
-				else if (Array.isArray(restartType)) watchItem.services.push(...restartType);
-			});
-		}
 
 		const needToReload = new Set();
 
 		// Debounced Service reloader function
 		const reloadServices = _.debounce(() => {
-			const needToReloadDedup = _.uniqWith([...needToReload], (a: any, b) => {
-				const ac = typeof a == 'string' ? a : a.__filename;
-				const bc: any = typeof b == 'string' ? b : b.__filename;
-				return ac == bc;
-			});
-
 			broker.logger.info(
-				kleur.bgMagenta().white().bold(`Reload ${needToReloadDedup.length} service(s)`),
+				kleur.bgMagenta().white().bold(`Reload ${needToReload.size} service(s)`),
 			);
 
 			needToReload.forEach((svc) => {
 				if (typeof svc == 'string') {
-					if (fs.existsSync(svc)) {
-						broker.logger.info(
-							kleur
-								.bgMagenta()
-								.white()
-								.bold(`Service exists. Loading ${svc} service`),
-						);
-						return broker.loadService(svc);
-					} else {
-						return;
-					}
+					broker.loadService(svc);
 				}
-				return hotReloadService(svc);
+
+				hotReloadService(svc);
 			});
 			needToReload.clear();
 		}, 500);
@@ -129,12 +89,6 @@ export const HotReloadMiddleware = (broker: any) => {
 		// Watching project files
 		broker.logger.debug('');
 		broker.logger.debug(kleur.yellow().bold('Watching the following project files:'));
-
-		projectFiles.forEach((watchItem, fName) => {
-			// Delete if file doesn't exist anymore
-			if (!fs.existsSync(fName)) projectFiles.delete(fName);
-		});
-
 		projectFiles.forEach((watchItem, fName) => {
 			const relPath = path.relative(process.cwd(), fName);
 			if (watchItem.brokerRestart) {
@@ -150,7 +104,7 @@ export const HotReloadMiddleware = (broker: any) => {
 					`  ${relPath}:`,
 					kleur.grey(
 						`reload ${watchItem.services.length} service(s) & ${watchItem.others.length} other(s).`,
-					) /*, watchItem.services, watchItem.others*/,
+					) /* , watchItem.services, watchItem.others*/,
 				);
 				watchItem.services.forEach((svcFullname: any) =>
 					broker.logger.debug(kleur.grey(`    ${svcFullname}`)),
@@ -281,9 +235,7 @@ export const HotReloadMiddleware = (broker: any) => {
 
 		// Skip node_modules files, if there is parent project file
 		if ((service || parents) && fName.indexOf('node_modules') !== -1) {
-			if (
-				hotReloadModules.find((modulePath: any) => fName.indexOf(modulePath) !== -1) == null
-			) {
+			if (hotReloadModules.find((modulePath) => fName.indexOf(modulePath) !== -1) == null) {
 				return;
 			}
 		}
@@ -417,10 +369,6 @@ export const HotReloadMiddleware = (broker: any) => {
 										(eventType.toString() === 'change' && !isLoaded)
 									) {
 										// This is a new file. We should wait for the file fully copied.
-										broker.logger.debug(
-											'Loading new file: ',
-											path.basename(filename),
-										);
 										needToLoad.add(fullPath);
 										loadServices();
 									}
@@ -451,35 +399,7 @@ export const HotReloadMiddleware = (broker: any) => {
 
 		// After broker started
 		// eslint-disable-next-line prefer-arrow/prefer-arrow-functions
-		started(broker: any) {
-			if (broker.options.hotReload == null) {
-				return;
-			} else if (typeof broker.options.hotReload === 'object') {
-				if (Array.isArray(broker.options.hotReload.modules)) {
-					hotReloadModules = broker.options.hotReload.modules.map(
-						(moduleName: string) => `/node_modules/${moduleName}/`,
-					);
-				}
-				if (broker.options.hotReload.extraFiles) {
-					/**
-					 * **Example:**
-					 * ```js
-					 * hotReload: {
-					 * 	extraFiles: {
-					 * 		"./configuration.json": "broker", // reload the broker
-					 * 		"./common.js": "allServices", // reload all services
-					 * 		"./database": "v1.posts", // reload a service
-					 * 		"./database": ["v1.posts", "users"], // reload multiple services
-					 * 	}
-					 * }
-					 * ```
-					 */
-					extraFiles = broker.options.hotReload.extraFiles;
-				}
-			} /* else if (broker.options.hotReload !== true) {
-				return;
-			} */
-
+		started() {
 			watchProjectFiles();
 			watchProjectFolders();
 		},
@@ -498,3 +418,4 @@ export const HotReloadMiddleware = (broker: any) => {
 		},
 	};
 };
+// export default HotReloadMiddleware;

@@ -1,7 +1,7 @@
 import pick from 'lodash/pick';
 import { Context } from 'moleculer';
 
-const errorHandler = (
+export const errorHandler = (
 	info: Context<Record<string, never>>,
 	message?: string,
 	err?: unknown,
@@ -37,4 +37,3 @@ const errorHandler = (
 		err,
 	);
 };
-export default errorHandler;

@@ -38,7 +38,7 @@ const getValue = (value: string, context: CastingContext): unknown => {
 	}
 };
 
-const dbSeed =
+export const dbSeed =
 	(dbInfo: DBInfo, classReference: new () => any) =>
 	async (adapter: DbAdapter): Promise<void> => {
 		try {
@@ -74,4 +74,4 @@ const dbSeed =
 			return;
 		}
 	};
-export { dbSeed };
+// export { dbSeed };

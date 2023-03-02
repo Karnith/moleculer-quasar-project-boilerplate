@@ -168,7 +168,7 @@ export const editorMixin = (mixinOptions?: any) => {
 			try {
 				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 				// @ts-ignore
-				this.logger.info(
+				this.logger.debug(
 					`♻ Testing for matches to modify in swagger editor html at ${pathToSwaggerEitorHtml}`,
 				);
 				const dryRun = replaceInFile({ dry: true, countMatches: true, ...options });
@@ -177,13 +177,13 @@ export const editorMixin = (mixinOptions?: any) => {
 					.then((results) => {
 						if (results[0]['hasChanged'] == true) {
 							// @ts-ignore
-							this.logger.info(
+							this.logger.debug(
 								`♻ Found matches in swagger editor html, updating file...`,
 							);
 							replaceInFile(options)
 								.then(
 									// @ts-ignore
-									this.logger.info(
+									this.logger.debug(
 										`♻ Updated swagger editor html at ${pathToSwaggerEitorHtml}`,
 									),
 								)
@@ -195,7 +195,7 @@ export const editorMixin = (mixinOptions?: any) => {
 								);
 						} else {
 							// @ts-ignore
-							this.logger.info(
+							this.logger.debug(
 								'♻ No changes needed, swagger editor html has the correct values',
 							);
 						}
@@ -253,17 +253,17 @@ export const editorMixin = (mixinOptions?: any) => {
 								// @ts-ignore
 								const generatedScheme = this.generateOpenAPISchema();
 								// @ts-ignore
-								this.logger.info(
+								this.logger.debug(
 									'♻ Checking if Swagger JSON schema needs updating...',
 								);
 								if (isEqual(swJSON, generatedScheme)) {
 									// @ts-ignore
-									this.logger.info(
+									this.logger.debug(
 										'♻ No changes needed, swagger json schema has the correct values',
 									);
 								} else {
 									// @ts-ignore
-									this.logger.info(
+									this.logger.debug(
 										'♻ Swagger JSON schema needs updating, updating file...',
 									);
 									writeFileSync(
@@ -272,7 +272,7 @@ export const editorMixin = (mixinOptions?: any) => {
 										'utf8',
 									);
 									// @ts-ignore
-									this.logger.info(`♻ Updated swagger JSON`);
+									this.logger.debug(`♻ Updated swagger JSON`);
 								}
 							} catch (err) {
 								throw new MoleculerServerError(
@@ -298,23 +298,23 @@ export const editorMixin = (mixinOptions?: any) => {
 								const swYAML = YAML.load(readFileSync('./swagger.yaml', 'utf8'));
 
 								// @ts-ignore
-								this.logger.info(
+								this.logger.debug(
 									'♻ Checking if Swagger YAML schema needs updating...',
 								);
 								if (isEqual(swYAML, swJSON)) {
 									// @ts-ignore
-									this.logger.info(
+									this.logger.debug(
 										'♻ No changes needed, swagger YAML schema has the correct values',
 									);
 									return res.end(generatedYAML);
 								} else {
 									// @ts-ignore
-									this.logger.info(
+									this.logger.debug(
 										'♻ Swagger YAML schema needs updating, updating file...',
 									);
 									writeFileSync('./swagger.yaml', generatedYAML, 'utf8');
 									// @ts-ignore
-									this.logger.info(`♻ Updated swagger YAML`);
+									this.logger.debug(`♻ Updated swagger YAML`);
 									return res.end(generatedYAML);
 								}
 							}
@@ -341,11 +341,9 @@ export const editorMixin = (mixinOptions?: any) => {
 		async started() {
 			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 			// @ts-ignore
-			this.logger.info(
+			this.logger.debug(
 				`♻ Swagger Editor server is available at ${mixinOptions.routeOptions.path}`,
 			);
 		},
 	};
 };
-
-module.exports = { editorMixin };

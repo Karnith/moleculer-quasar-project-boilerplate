@@ -1,5 +1,5 @@
 import { existsSync, writeFileSync } from 'fs';
-import { generateOpenAPISchema } from '@ServiceHelpers/openAPISchema.helper';
+import { generateOpenAPISchema } from '@ServiceHelpers';
 
 const swJSONFile = existsSync('./swagger.json');
 module.exports = {
@@ -9,7 +9,7 @@ module.exports = {
 		return function (schema: any, schemaMods: any) {
 			const generatedScheme = generateOpenAPISchema();
 			// @ts-ignore
-			this.logger.info('♻ checking for openAPI schema json before server start.');
+			this.logger.debug('♻ checking for openAPI schema json before server start.');
 			if (!swJSONFile) {
 				// @ts-ignore
 				this.logger.warn('♻ No Swagger JSON file found, creating it.');
@@ -23,7 +23,7 @@ module.exports = {
 				return next(schema, schemaMods);
 			}
 			// @ts-ignore
-			this.logger.info('♻ Swagger JSON file found, continuing...');
+			this.logger.debug('♻ Swagger JSON file found, continuing...');
 			return next(schema, schemaMods);
 		};
 	},

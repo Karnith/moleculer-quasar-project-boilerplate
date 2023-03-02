@@ -97,7 +97,7 @@ export const openAPIMixin = (mixinOptions?: any) => {
 			try {
 				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 				// @ts-ignore
-				this.logger.info(
+				this.logger.debug(
 					`♻ Testing for matches to modify in swagger initalize at ${pathToSwaggerUi}/swagger-initializer.js`,
 				);
 				const dryRun = replaceInFile({ dry: true, countMatches: true, ...options });
@@ -105,13 +105,13 @@ export const openAPIMixin = (mixinOptions?: any) => {
 					.then((results) => {
 						if (results[0]['hasChanged'] == true) {
 							// @ts-ignore
-							this.logger.info(
+							this.logger.debug(
 								`♻ Found matches in swagger initalize, updating file...`,
 							);
 							replaceInFile(options)
 								.then(
 									// @ts-ignore
-									this.logger.info(
+									this.logger.debug(
 										`♻ Updated swagger initalize at ${pathToSwaggerUi}/swagger-initializer.js`,
 									),
 								)
@@ -123,7 +123,7 @@ export const openAPIMixin = (mixinOptions?: any) => {
 								);
 						} else {
 							// @ts-ignore
-							this.logger.info(
+							this.logger.debug(
 								'♻ No changes needed, swagger initialize has the correct values',
 							);
 						}
@@ -189,12 +189,12 @@ export const openAPIMixin = (mixinOptions?: any) => {
 							} else {
 								const swJSON = require('../../swagger.json');
 								// @ts-ignore
-								this.logger.info(
+								this.logger.debug(
 									'♻ Checking if Swagger JSON schema needs updating...',
 								);
 								if (isEqual(swJSON, generatedScheme)) {
 									// @ts-ignore
-									this.logger.info(
+									this.logger.debug(
 										'♻ No changes needed, swagger json schema has the correct values',
 									);
 									// eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -202,7 +202,7 @@ export const openAPIMixin = (mixinOptions?: any) => {
 									return this.sendResponse(req, res, generatedScheme);
 								} else {
 									// @ts-ignore
-									this.logger.info(
+									this.logger.debug(
 										'♻ Swagger JSON schema needs updating, updating file...',
 									);
 									writeFileSync(
@@ -211,7 +211,7 @@ export const openAPIMixin = (mixinOptions?: any) => {
 										'utf8',
 									);
 									// @ts-ignore
-									this.logger.info(`♻ Updated swagger JSON`);
+									this.logger.debug(`♻ Updated swagger JSON`);
 									// @ts-ignore
 									return this.sendResponse(req, res, generatedScheme);
 									// return req.end(generatedScheme);
@@ -240,11 +240,9 @@ export const openAPIMixin = (mixinOptions?: any) => {
 		async started() {
 			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 			// @ts-ignore
-			this.logger.info(
+			this.logger.debug(
 				`♻ OpenAPI swagger Docs server is available at ${mixinOptions.routeOptions.path}`,
 			);
 		},
 	};
 };
-
-module.exports = { openAPIMixin };

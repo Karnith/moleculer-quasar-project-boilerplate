@@ -6,6 +6,7 @@ import { Get, Post, Service } from '@ourparentcenter/moleculer-decorators-extend
 import { Config } from '../../common';
 import { GreeterWelcomeParams, RestOptions } from '../../types';
 import { BaseService } from 'factories';
+import { EncryptionUtils } from '@ServiceHelpers';
 /**
  * @typedef {import('moleculer').Context} Context Moleculer's Context
  */
@@ -60,6 +61,10 @@ export default class GreeterService extends BaseService {
 	})
 	async hello() {
 		this.logger.debug('♻ Returning hello string');
+		const woman = EncryptionUtils.encrypt('Hot woman here, decrypt me!!');
+		const decryptedWoman = EncryptionUtils.decrypt(woman);
+		this.logger.warn('Encrypted woman: ', woman);
+		this.logger.warn('Explicit content: ', decryptedWoman);
 		return 'Hello Moleculer';
 	}
 	/**

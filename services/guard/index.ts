@@ -6,7 +6,7 @@
 import { Context, Errors } from 'moleculer';
 import { Action, Method, Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { sign, verify } from 'jsonwebtoken';
-import errorHandler from '../../helpers/error.helper';
+import { errorHandler } from '@ServiceHelpers';
 import { BaseService } from './../../factories';
 
 const MoleculerClientError = Errors.MoleculerClientError;

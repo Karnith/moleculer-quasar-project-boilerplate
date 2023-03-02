@@ -2,15 +2,14 @@
 import { inspect } from 'util';
 import { BrokerOptions, Errors, MetricRegistry } from 'moleculer';
 import 'reflect-metadata';
-// import pick from 'lodash/pick';
-// import ServiceGuard = require('./middlewares/ServiceGuard');
-// import HotReloadMiddleware from './middlewares/HotReloadCHokidar';
-// import OpenInBrowserMiddleware from './middlewares/OpenInBrowser';
 import { Config } from './common';
-// import MoleculerRetryableError = Errors.MoleculerRetryableError;
-// import generateOpenAPIFile from '@Middlewares/openAPIGenerateFile';
-import { generateOpenAPIFile, OpenInBrowserMiddleware, ServiceGuard } from '@Middlewares';
-import { pick } from 'lodash';
+import {
+	generateOpenAPIFile,
+	OpenInBrowserMiddleware,
+	ServiceGuard,
+	/* HotReloadMiddleware, */
+} from '@Middlewares';
+// import { pick } from 'lodash';
 
 const MoleculerRetryableError = Errors.MoleculerRetryableError;
 const MoleculerServerError = Errors.MoleculerServerError;
@@ -72,7 +71,7 @@ const brokerConfig: BrokerOptions = {
 			type: 'Log4js',
 			options: {
 				// Logging level
-				level: 'info',
+				level: 'debug',
 
 				log4js: {
 					// More info: https://github.com/log4js-node/log4js-node#usage
@@ -280,8 +279,7 @@ const brokerConfig: BrokerOptions = {
 
 	// Register custom middlewares
 	middlewares: [
-		/* HotReloadMiddleware, */
-		ServiceGuard,
+		/* HotReloadMiddleware, */ ServiceGuard,
 		OpenInBrowserMiddleware,
 		generateOpenAPIFile,
 	],

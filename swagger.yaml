@@ -1,6 +1,6 @@
 openapi: 3.0.1
 info:
-  title: testdevrepotemplate API Documentation
+  title: mqpb API Documentation
   description: Moleculer JS Microservice Boilerplate with Typescript, TypeORM, CLI, Service Clients, Swagger, Jest, Docker, Eslint support and everything you will ever need to deploy rock solid projects..
   version: 1.0.0
 servers:
@@ -538,8 +538,9 @@ paths:
     get:
       tags:
         - Roles
-      summary: Get role by id (auto generated)
+      summary: Get role by id
       description: Get role by id
+      operationId: getRoleById
       parameters:
         - name: id
           in: path
@@ -566,8 +567,9 @@ paths:
     put:
       tags:
         - Roles
-      summary: Update a role (auto generated)
+      summary: Update a role
       description: Update role.
+      operationId: updateRole
       parameters:
         - name: id
           in: path
@@ -605,8 +607,9 @@ paths:
     delete:
       tags:
         - Roles
-      summary: Delete a role (auto generated)
+      summary: Delete a role
       description: Delete role by id
+      operationId: removeRole
       parameters:
         - name: id
           in: path

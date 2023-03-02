@@ -2,7 +2,14 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 'use strict';
 import moleculer, { ActionParams, Context } from 'moleculer';
-import { Put, Method, Service, Post, Get } from '@ourparentcenter/moleculer-decorators-extended';
+import {
+	Put,
+	Method,
+	Service,
+	Post,
+	Get,
+	Delete,
+} from '@ourparentcenter/moleculer-decorators-extended';
 import { dbRolesMixin, eventsRolesMixin } from '../../mixins/dbMixins';
 import { Config } from '../../common';
 import {
@@ -17,6 +24,9 @@ import {
 	UserAuthMeta,
 	UserRoleCreateParams,
 	UserRoleDefault,
+	UserRoleDeleteParams,
+	UserRoleGetParams,
+	UserRoleUpdateParams,
 	// UserJWT,
 } from '../../types';
 import { JsonConvert } from 'json2typescript';
@@ -25,10 +35,11 @@ import { BaseServiceWithDB } from '../../factories';
 import { DbContextParameters } from 'moleculer-db';
 
 const validateRoleBase: ActionParams = {
-	role: 'string',
-	value: 'string',
+	role: { type: 'string', optional: true },
+	value: { type: 'string', optional: true },
 	active: { type: 'boolean', optional: true },
 	langKey: { type: 'string', min: 2, max: 5, optional: true },
+	systemLocked: { type: 'boolean', optional: true },
 };
 
 /**
@@ -414,8 +425,9 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 	 *    get:
 	 *      tags:
 	 *      - "Roles"
-	 *      summary: Get role by id (auto generated)
+	 *      summary: Get role by id
 	 *      description: Get role by id
+	 *      operationId: getRoleById
 	 *      parameters:
 	 *      - name: id
 	 *        in: path
@@ -440,6 +452,31 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 	 *          description: Server error
 	 *          content: {}
 	 */
+	@Get<RestOptions>('/:id', {
+		name: 'get',
+		restricted: ['api'],
+		// roles: [UserRoleDefault.SUPERADMIN, UserRoleDefault.ADMIN],
+		params: {
+			id: { type: 'string', min: 3 },
+		},
+	})
+	async getRoleById(ctx: Context<UserRoleGetParams, UserAuthMeta>) {
+		const params = this.sanitizeParams(ctx, ctx.params);
+		this.logger.debug(`♻ Attempting to get role with id ${ctx.params.id}`);
+		const role = await this._get(
+			ctx,
+			await { ...params, populate: ['createdBy', 'lastModifiedBy'] },
+		);
+		if (!role) {
+			this.logger.error(`♻ Role with id ${ctx.params.id} not found`);
+			throw new moleculer.Errors.MoleculerClientError(
+				roleErrorMessage.NOT_FOUND,
+				roleErrorCode.NOT_FOUND,
+			);
+		}
+		this.logger.debug('♻ Returning role: ', role);
+		return role;
+	}
 
 	/**
 	 *  @swagger
@@ -448,8 +485,9 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 	 *    put:
 	 *      tags:
 	 *      - "Roles"
-	 *      summary: Update a role (auto generated)
+	 *      summary: Update a role
 	 *      description: Update role.
+	 *      operationId: updateRole
 	 *      parameters:
 	 *      - name: id
 	 *        in: path
@@ -485,6 +523,52 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 	 *          content: {}
 	 *      x-codegen-request-body-name: params
 	 */
+	@Put<RestOptions>('/:id', {
+		name: 'update',
+		restricted: ['api'],
+		// roles: [UserRoleDefault.SUPERADMIN, UserRoleDefault.ADMIN],
+		params: {
+			...validateRoleBase,
+		},
+	})
+	async updateRole(ctx: Context<UserRoleUpdateParams, UserAuthMeta>) {
+		const { id } = ctx.params;
+		this.logger.debug('♻ Deleting param id');
+		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+		// @ts-ignore
+		delete ctx.params.id;
+		this.logger.debug(`♻ Attempting to update role with id ${ctx.params.id}`);
+		const role = (await this.adapter.findById(id)) as IUserRole;
+		if (!role) {
+			this.logger.error('♻ Role to update not found');
+			throw new moleculer.Errors.MoleculerClientError(
+				roleErrorMessage.NOT_FOUND,
+				roleErrorCode.NOT_FOUND,
+			);
+		}
+		this.logger.debug('♻ Removing forbidden fields from found role');
+		const parsedEntity = this.removeForbiddenFields(
+			new JsonConvert().deserializeObject({ ...ctx.params }, RolesEntity).getMongoEntity(),
+		);
+		const newRole = this.updateAuthor(
+			{
+				...role,
+				...parsedEntity,
+				createdBy: role.createdBy,
+				createdDate: role.createdDate,
+			},
+			{ modifier: ctx.meta.user },
+		);
+		const result = await this.adapter.updateById(id, newRole);
+		const transform = await this.transformDocuments(
+			ctx,
+			{ populate: ['createdBy', 'lastModifiedBy'] },
+			// {},
+			result,
+		);
+		this.logger.debug('♻ Returning updated role: ', transform);
+		return transform;
+	}
 
 	/**
 	 *  @swagger
@@ -493,8 +577,9 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 	 *    delete:
 	 *      tags:
 	 *      - "Roles"
-	 *      summary: Delete a role (auto generated)
+	 *      summary: Delete a role
 	 *      description: Delete role by id
+	 *      operationId: removeRole
 	 *      parameters:
 	 *      - name: id
 	 *        in: path
@@ -511,4 +596,28 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 	 *          description: Server error
 	 *          content: {}
 	 */
+	@Delete<RestOptions>('/:id', {
+		name: 'remove',
+		restricted: ['api'],
+		// roles: [UserRoleDefault.SUPERADMIN, UserRoleDefault.ADMIN],
+		params: {
+			id: { type: 'string', min: 3 },
+		},
+	})
+	async removeRole(ctx: Context<UserRoleDeleteParams, UserAuthMeta>) {
+		const { id } = ctx.params;
+		this.logger.debug('♻ Removing role by id');
+		const role = (await this.adapter.findById(id)) as IUserRole;
+		if (!role) {
+			this.logger.error(`♻ Role id ${id} not found`);
+			throw new moleculer.Errors.MoleculerClientError(
+				roleErrorMessage.NOT_FOUND,
+				roleErrorCode.NOT_FOUND,
+			);
+		}
+		this.logger.debug(`♻ Found role, removing...`);
+		const result = await this.adapter.removeById(id);
+		this.logger.debug(`♻ Returning removed role: `, result);
+		return result;
+	}
 }

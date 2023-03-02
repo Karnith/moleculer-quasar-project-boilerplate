@@ -64,12 +64,14 @@ export class BaseService extends Service {
 
 	@ServiceStarted()
 	serviceStarted() {
-		this.logger.info(`♻ ${this.fullName.toUpperCase()} service started, ready for connections`);
+		this.logger.debug(
+			`♻ ${this.fullName.toUpperCase()} service started, ready for connections`,
+		);
 	}
 
 	@ServiceStopped()
 	serviceStopped() {
-		this.logger.info(
+		this.logger.debug(
 			`♻ ${this.fullName.toUpperCase()} service stopped, connections terminated`,
 		);
 	}
