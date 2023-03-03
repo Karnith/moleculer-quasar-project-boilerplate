@@ -170,7 +170,7 @@ export default class AuthService extends BaseServiceWithDB<UserServiceSettingsOp
 	}
 
 	@Method
-	async generateJWT(user: IUser) {
+	async generateJWT(user: IUser): Promise<string> {
 		this.logger.debug('♻ Generating JWT');
 		const exp = new Date();
 		this.logger.debug('♻ Creating key');
@@ -189,7 +189,7 @@ export default class AuthService extends BaseServiceWithDB<UserServiceSettingsOp
 				.setExpirationTime(Math.floor(exp.getTime() / 1000))
 				.encrypt(key);
 			return userJWT;
-		} catch (err) {
+		} catch (err: any) {
 			this.logger.debug('♻ Error generating JWT: ', err);
 			return err;
 		}

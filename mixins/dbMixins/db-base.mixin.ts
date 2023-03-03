@@ -156,9 +156,13 @@ export class DbBaseMixin {
 	private getMongoAdapter(schema: ServiceSchema) {
 		// eslint-disable-next-line @typescript-eslint/no-var-requires
 		let MongoAdapter: any;
-		import('moleculer-db-adapter-mongoose').then(
-			(AdapterMongo) => (MongoAdapter = AdapterMongo),
-		);
+		import('moleculer-db-adapter-mongoose')
+			.then((AdapterMongo) => (MongoAdapter = AdapterMongo))
+			.catch((err) => {
+				// @ts-ignore
+				this.logger.error(err);
+				throw err;
+			});
 		return {
 			...schema,
 			adapter: new MongoAdapter(this.getDBUri(), {

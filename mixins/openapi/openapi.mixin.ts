@@ -9,12 +9,9 @@ import { Errors } from 'moleculer';
 import ApiGateway from 'moleculer-web';
 import SwaggerUI from 'swagger-ui-dist';
 import _, { isEqual } from 'lodash';
-// import swaggerJSDoc from 'swagger-jsdoc';
-// import * as pkg from '../../package.json';
 import { Config } from '../../common';
 import { RequestMessage } from 'types';
 import { replaceInFile } from 'replace-in-file';
-// import { swComponents, swSecurity } from '../swComponents';
 import { generateOpenAPISchema } from '@ServiceHelpers/openAPISchema.helper';
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const MoleculerServerError = Errors.MoleculerServerError;
@@ -103,7 +100,7 @@ export const openAPIMixin = (mixinOptions?: any) => {
 				const dryRun = replaceInFile({ dry: true, countMatches: true, ...options });
 				dryRun
 					.then((results) => {
-						if (results[0]['hasChanged'] == true) {
+						if (results[0]['hasChanged'] === true) {
 							// @ts-ignore
 							this.logger.debug(
 								`♻ Found matches in swagger initalize, updating file...`,
@@ -169,6 +166,7 @@ export const openAPIMixin = (mixinOptions?: any) => {
 				},
 
 				aliases: {
+					// deepcode ignore NoRateLimitingForExpensiveWebOperation: <please specify a reason of ignoring this>
 					'GET /swagger.json'(req: any, res: any): void {
 						try {
 							const ctx = req.$ctx;
@@ -214,7 +212,6 @@ export const openAPIMixin = (mixinOptions?: any) => {
 									this.logger.debug(`♻ Updated swagger JSON`);
 									// @ts-ignore
 									return this.sendResponse(req, res, generatedScheme);
-									// return req.end(generatedScheme);
 								}
 							}
 						} catch (err) {

@@ -11,7 +11,7 @@ jest.setTimeout(JEST_TIMEOUT);
 
 describe('Unit tests for Api service', () => {
 	const broker = new ServiceBroker(testConfig);
-	const service = broker.createService(TestingService) as TestingService;
+	const service = broker.createService(TestingService);
 	const endpoint: Endpoint = {
 		broker,
 		id: Math.random().toString(36).slice(2),
@@ -59,7 +59,7 @@ describe('Unit tests for Api service', () => {
 					authorization: 'WrongToken_header',
 				},
 			};
-			service.authenticate(context, undefined, mockRequest).catch((err) => {
+			service.authenticate(context, undefined, mockRequest).catch((err: any) => {
 				expect(err).toBeInstanceOf(ApiGatewayService.Errors.UnAuthorizedError);
 				done();
 			});
@@ -90,7 +90,7 @@ describe('Unit tests for Api service', () => {
 					authorization: `Bearer ${token}`,
 				},
 			};
-			service.authenticate(context, undefined, mockRequest).catch((err) => {
+			service.authenticate(context, undefined, mockRequest).catch((err: any) => {
 				expect(err).toBeInstanceOf(ApiGatewayService.Errors.UnAuthorizedError);
 				done();
 			});

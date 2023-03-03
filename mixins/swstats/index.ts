@@ -10,11 +10,17 @@ const swMiddleware = swStats.getMiddleware({
 });
 
 // clears the promclient registry
-const clearPrometheusMetrics = promClient.register.getMetricsAsJSON().then((metrics) =>
-	metrics.forEach((metric: Record<string, any>) => {
-		// let metric = metrics[metricId];
-		promClient.register.removeSingleMetric(metric.name);
-	}),
-);
+const clearPrometheusMetrics = promClient.register
+	.getMetricsAsJSON()
+	.then((metrics) =>
+		metrics.forEach((metric: Record<string, any>) => {
+			promClient.register.removeSingleMetric(metric.name);
+		}),
+	)
+	.catch((err) => {
+		// @ts-ignore
+		this.logger.error(err);
+		throw err;
+	});
 
 export { swMiddleware, swStats, clearPrometheusMetrics };

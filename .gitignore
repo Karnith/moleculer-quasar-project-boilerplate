@@ -68,3 +68,4 @@ dist/
 .dccache
 data/
 logs/
+junit.xml

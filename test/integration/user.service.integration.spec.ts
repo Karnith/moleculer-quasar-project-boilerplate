@@ -38,6 +38,7 @@ async function loginTest(server: string, info: { user: UserJWT; password: string
 	const { user, password, url = '/auth/login' } = info;
 	const response = await request(server).post(url).send({
 		login: user.login,
+		// file deepcode ignore NoHardcodedPasswords: password in a test file
 		password,
 	});
 	expect(response.status).toBe(constants.HTTP_STATUS_OK);

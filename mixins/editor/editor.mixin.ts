@@ -18,7 +18,6 @@ import * as pkg from '../../package.json';
 import { swComponents, swSecurity } from '../swComponents';
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const MoleculerServerError = Errors.MoleculerServerError;
-// console.log(SwaggerUI.absolutePath());
 const isJSON = (str: any) => {
 	// basic test: "does this look like JSON?"
 	let regex = /^[ \r\n\t]*[{[]/;

@@ -207,12 +207,14 @@ export default class ApiService extends BaseService {
 				const field = e.field.split('.').pop();
 				o[field] = e.message;
 			});
-			res.end(JSON.stringify({ errors: o }, null, 2));
+			// res.end(JSON.stringify({ errors: o }, null, 2));
+			this.sendResponse(req, res, JSON.stringify({ errors: o }, null, 2));
 		};
 		const nonError422 = () => {
 			const errObj = pick(err, ['name', 'message', 'code', 'type', 'data']);
 			// deepcode ignore ServerLeak: errorObj is reduced to only necessary information relayed
-			res.end(JSON.stringify(errObj, null, 2));
+			// res.end(JSON.stringify(errObj, null, 2));
+			this.sendResponse(req, res, JSON.stringify(errObj, null, 2));
 		};
 
 		err.code === 422 ? error422() : nonError422();

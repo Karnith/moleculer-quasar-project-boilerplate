@@ -48,10 +48,12 @@ export const disabledUser: UserJWT = {
 export async function getJWT(
 	server: string,
 	login = superAdminUser.login,
+	// file deepcode ignore NoHardcodedPasswords: password in a test file
 	password = '123456',
 	round = 0,
 ): Promise<string> {
 	const loginUrl = '/auth/login';
+	// deepcode ignore NoHardcodedCredentials: <please specify a reason of ignoring this>
 	const response = await request(server).post(loginUrl).send({ login, password });
 	if (response.status !== 200 && round < 2) {
 		round && console.log('loop login', round);

@@ -4,7 +4,7 @@ import {
 	ServiceStopped,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker, ServiceSchema } from 'moleculer';
-import { MoleculerDBService, UserJWT } from 'types';
+import { MoleculerDBService, UserJWT } from '../types';
 
 // create new service factory, inheriting from moleculer native Service
 export class BaseServiceWithDB<ServiceSettingsOptions, Entity> extends MoleculerDBService<
@@ -34,7 +34,6 @@ export class BaseServiceWithDB<ServiceSettingsOptions, Entity> extends Moleculer
 				}
 			}
 		}
-		console.log(modifier);
 		if (modifier || modifier == null || modifier == undefined) {
 			if (modifier != null || modifier != undefined) {
 				result = { ...result, lastModifiedBy: modifier._id, lastModifiedDate: new Date() };

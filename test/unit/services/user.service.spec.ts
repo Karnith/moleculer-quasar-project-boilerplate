@@ -35,8 +35,8 @@ function calledCacheClean(mockFn: jest.SpyInstance) {
 describe('Unit tests for User service', () => {
 	let broker: ServiceBroker;
 	let endpoint: Endpoint;
-	let service: TestingService;
-	let authService: AuthService;
+	let service: any;
+	let authService: any;
 	const spyBroadcast = jest.spyOn(Context.prototype, 'broadcast');
 
 	beforeEach(async () => {
@@ -49,8 +49,8 @@ describe('Unit tests for User service', () => {
 			node: {},
 			state: true,
 		};
-		authService = broker.createService(AuthService) as AuthService;
-		service = broker.createService(TestingService) as TestingService;
+		authService = broker.createService(AuthService);
+		service = broker.createService(TestingService);
 		// version = `vv${service.version}`;
 		await clearDB(Config.DB_USER);
 		await broker.start();
@@ -275,6 +275,7 @@ describe('Unit tests for User service', () => {
 				]);
 		});
 		it('login good', async () => {
+			// file deepcode ignore NoHardcodedPasswords: password just for testing
 			context.params = { login: String(simpleUser.login), password: '123456' };
 			const response = await service.loginUser(context);
 			const context2 = new Context<UserTokenParams, Record<string, unknown>>(

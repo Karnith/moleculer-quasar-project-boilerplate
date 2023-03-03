@@ -8,7 +8,7 @@
 		"start": "ts-node -r tsconfig-paths/register ./node_modules/moleculer/bin/moleculer-runner.js --config moleculer.config.ts",
 		"cli": "moleculer connect ",
 		"ci": "jest --watchAll",
-		"test": "jest --coverage",
+		"test": "jest --coverage --detectOpenHandles",
 		"lint": "eslint --ext .js,.ts .",
 		"dc:up": "docker-compose up --build -d",
 		"dc:logs": "docker-compose logs -f",
@@ -118,6 +118,20 @@
 			"jest-chain",
 			"jest-extended/all"
 		],
+		"moduleNameMapper": {
+			"^@MicroServices/(.*)$": "<rootDir>/services/$1",
+			"^@MicroServices(.*)$": "<rootDir>/services/$1",
+			"^@Entities/(.*)$": "<rootDir>/entities/$1",
+			"^@Entities(.*)$": "<rootDir>/entities/$1",
+			"^@Factories/(.*)$": "<rootDir>/factories/$1",
+			"^@Factories(.*)$": "<rootDir>/factories/$1",
+			"^@Middlewares/(.*)$": "<rootDir>/middlewares/$1",
+			"^@Middlewares(.*)$": "<rootDir>/middlewares/$1",
+			"^@Mixins/(.*)$": "<rootDir>/mixins/$1",
+			"^@Mixins(.*)$": "<rootDir>/mixins/$1",
+			"^@ServiceHelpers/(.*)$": "<rootDir>/helpers/$1",
+			"^@ServiceHelpers(.*)$": "<rootDir>/helpers/$1"
+		},
 		"moduleFileExtensions": [
 			"ts",
 			"tsx",
