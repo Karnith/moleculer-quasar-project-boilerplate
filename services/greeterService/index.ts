@@ -5,7 +5,7 @@ import { Context } from 'moleculer';
 import { Get, Post, Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { Config } from '../../common';
 import { GreeterWelcomeParams, RestOptions } from '../../types';
-import { BaseService } from 'factories';
+import { BaseService } from '@Factories';
 import { EncryptionUtils } from '@ServiceHelpers';
 /**
  * @typedef {import('moleculer').Context} Context Moleculer's Context

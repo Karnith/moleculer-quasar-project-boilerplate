@@ -22,8 +22,10 @@
 		"paths": {
 			"@MicroServices/*": ["services/*"],
 			"@MicroServices": ["services"],
-			"@Entities/*": ["Entities/*"],
-			"@Entities": ["Entities"],
+			"@Entities/*": ["entities/*"],
+			"@Entities": ["entities"],
+			"@Factories/*": ["factories/*"],
+			"@Factories": ["factories"],
 			"@Hooks/*": ["Hooks/*"],
 			"@Hooks": ["Hooks"],
 			"@ServiceHelpers/*": ["helpers/*"],

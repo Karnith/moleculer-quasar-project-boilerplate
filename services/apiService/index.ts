@@ -9,8 +9,7 @@ import helmet from 'helmet';
 import ApiGateway from 'moleculer-web';
 import { Service, Method } from '@ourparentcenter/moleculer-decorators-extended';
 import pick from 'lodash/pick';
-import { openAPIMixin } from '../../mixins/openapi/openapi.mixin';
-import { editorMixin } from '../../mixins/editor/editor.mixin';
+import { openAPIMixin, editorMixin, swMiddleware, swStats } from '@Mixins';
 import { Config } from '../../common';
 import {
 	RequestMessage,
@@ -21,8 +20,7 @@ import {
 	UserAuthMeta,
 } from '../../types';
 import { serviceRoutes } from './serviceroutes';
-import { swMiddleware, swStats } from '../../mixins/swstats';
-import { BaseService } from '../../factories';
+import { BaseService } from '@Factories';
 /**
  * @typedef {import('moleculer').Context} Context Moleculer's Context
  * @typedef {import('http').IncomingMessage} IncomingRequest Incoming HTTP Request

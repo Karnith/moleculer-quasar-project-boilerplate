@@ -6,7 +6,6 @@
 import moleculer, { Context } from 'moleculer';
 import { Action, Method, Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { EncryptJWT, jwtDecrypt } from 'jose';
-import { dbAuthMixin, eventsAuthMixin } from '../../mixins/dbMixins';
 import { Config } from '../../common';
 import {
 	IUser,
@@ -15,9 +14,10 @@ import {
 	UserRolesParams,
 	UserServiceSettingsOptions,
 	UserTokenParams,
+	userErrorCode,
+	userErrorMessage,
 } from '../../types';
-import { userErrorCode, userErrorMessage } from '../../types/errors';
-import { BaseServiceWithDB } from '../../factories';
+import { BaseServiceWithDB } from '@Factories';
 
 @Service({
 	name: 'auth',
@@ -29,8 +29,7 @@ import { BaseServiceWithDB } from '../../factories';
 	/**
 	 * Mixins
 	 */
-	// @ts-ignore
-	mixins: [dbAuthMixin, eventsAuthMixin],
+	// mixins: [],
 	/**
 	 * Settings
 	 */
@@ -40,7 +39,6 @@ import { BaseServiceWithDB } from '../../factories';
 		pageSize: 10,
 		// Base path
 		rest: '/',
-		// rest: '/v1/user',
 		// user jwt secret
 		JWT_SECRET: Config.JWT_SECRET,
 		// Available fields in the responses
@@ -101,7 +99,18 @@ export default class AuthService extends BaseServiceWithDB<UserServiceSettingsOp
 				);
 			if (protectedHeader && payload.data._id) {
 				// returns user from payload _id
-				return await this._get(ctx, { id: payload.data._id });
+				// return await this._get(ctx, { id: payload.data._id });
+				const user = await ctx.call('v1.user.id', { id: payload.data._id });
+				if (!user) {
+					this.logger.error('♻ Error: User not found or disabled');
+					throw new moleculer.Errors.MoleculerClientError(
+						userErrorMessage.NOT_FOUND,
+						userErrorCode.NOT_FOUND,
+						'500',
+						[{ message: 'Error: User not found or disabled' }],
+					);
+				}
+				return user;
 			}
 		} catch (err) {
 			this.logger.error('♻ Error resolving token', ctx.params.token, err);
@@ -146,7 +155,7 @@ export default class AuthService extends BaseServiceWithDB<UserServiceSettingsOp
 					throw new moleculer.Errors.MoleculerClientError(
 						userErrorMessage.WRONG,
 						userErrorCode.WRONG,
-						'',
+						'500',
 						[{ message: 'Error: User not found or disabled' }],
 					);
 				} else {

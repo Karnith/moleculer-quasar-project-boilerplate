@@ -10,7 +10,6 @@ import {
 	Get,
 	Delete,
 } from '@ourparentcenter/moleculer-decorators-extended';
-import { dbRolesMixin, eventsRolesMixin } from '../../mixins/dbMixins';
 import { Config } from '../../common';
 import {
 	IUserRole,
@@ -30,8 +29,8 @@ import {
 	// UserJWT,
 } from '../../types';
 import { JsonConvert } from 'json2typescript';
-import { /* IUser, */ RolesEntity } from 'entities';
-import { BaseServiceWithDB } from '../../factories';
+import { /* IUser, */ RolesEntity } from '@Entities';
+import { BaseServiceWithDB, DBMixinFactory } from '@Factories';
 import { DbContextParameters } from 'moleculer-db';
 
 const validateRoleBase: ActionParams = {
@@ -56,7 +55,7 @@ const validateRoleBase: ActionParams = {
 	/**
 	 * Mixins
 	 */
-	mixins: [dbRolesMixin, eventsRolesMixin],
+	mixins: [...new DBMixinFactory('Roles').createMixin()],
 	/**
 	 * Settings
 	 */

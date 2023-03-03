@@ -17,7 +17,6 @@ import {
 import bcrypt from 'bcryptjs';
 import { JsonConvert } from 'json2typescript';
 import { DbContextParameters } from 'moleculer-db';
-import { dbUserMixin, eventsUserMixin } from '../../mixins/dbMixins';
 import { Config } from '../../common';
 import randomstring from 'randomstring';
 import {
@@ -31,7 +30,6 @@ import {
 	UsersDeleteParams,
 	UserEvent,
 	UserGetParams,
-	// UserJWT,
 	UserLoginMeta,
 	UserLoginParams,
 	UserRoleDefault,
@@ -39,12 +37,12 @@ import {
 	UsersServiceOptions,
 	UserUpdateParams,
 	UserActivateParams,
+	userErrorCode,
+	userErrorMessage,
 } from '../../types';
 
-import { UserEntity } from '../../entities';
-
-import { userErrorCode, userErrorMessage } from '../../types/errors';
-import { BaseServiceWithDB } from '../../factories';
+import { UserEntity } from '@Entities';
+import { BaseServiceWithDB, DBMixinFactory } from '@Factories';
 
 const validateUserBase: ActionParams = {
 	login: 'string',
@@ -80,7 +78,7 @@ const encryptPassword = (password: string) =>
 	/**
 	 * Mixins
 	 */
-	mixins: [dbUserMixin, eventsUserMixin],
+	mixins: [...new DBMixinFactory('User').createMixin()],
 	/**
 	 * Settings
 	 */
@@ -124,7 +122,7 @@ const encryptPassword = (password: string) =>
 export default class UserService extends BaseServiceWithDB<UserServiceSettingsOptions, IUser> {
 	@Action({
 		name: 'id',
-		restricted: ['api', 'user', 'roles'],
+		restricted: ['api', 'user', 'roles', 'auth'],
 		...getActionConfig,
 	})
 	async getUserId(ctx: Context<UserGetParams, UserAuthMeta>) {

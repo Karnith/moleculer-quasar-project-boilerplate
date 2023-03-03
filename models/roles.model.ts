@@ -48,7 +48,7 @@ const definition: definitionType<IUserRole> = (collection?: string) => ({
 	},
 });
 
-export const roleMongoModel = (collection: string): unknown => {
+export const rolesMongoModel = (collection: string): unknown => {
 	try {
 		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 		// @ts-ignore

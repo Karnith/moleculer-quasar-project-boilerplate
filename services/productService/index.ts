@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/explicit-member-accessibility */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-'use strict';
+('use strict');
 import { Context } from 'moleculer';
 import { Put, Method, Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { dbProductMixin, eventsProductMixin } from '../../mixins/dbMixins';
 import { Config } from '../../common';
 import {
 	IProduct,
@@ -12,7 +11,7 @@ import {
 	ProductsServiceOptions,
 	RestOptions,
 } from '../../types';
-import { BaseServiceWithDB } from '../../factories';
+import { BaseServiceWithDB, DBMixinFactory } from '@Factories';
 
 /**
  * @typedef {import('moleculer').Context} Context Moleculer's Context
@@ -27,7 +26,7 @@ import { BaseServiceWithDB } from '../../factories';
 	/**
 	 * Mixins
 	 */
-	mixins: [dbProductMixin, eventsProductMixin],
+	mixins: [...new DBMixinFactory('Product').createMixin()],
 	/**
 	 * Settings
 	 */
