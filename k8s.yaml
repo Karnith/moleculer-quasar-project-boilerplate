@@ -6,19 +6,11 @@ kind: ConfigMap
 metadata:
   name: common-env
 data:
-  NAMESPACE: ""
+  NAMESPACE: ''
   LOGLEVEL: info
   SERVICEDIR: dist/services
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  MONGO_URI: mongodb://mongo/testdevrepotemplate
+
+  MONGO_URI: mongodb://mongo/mqpb
 
 ---
 #########################################################
@@ -32,26 +24,28 @@ spec:
   selector:
     app: api
   ports:
-  - port: 3000
-    targetPort: 3000
+    - port: 3000
+      targetPort: 3000
 
 ---
 #########################################################
 # Ingress for Moleculer API Gateway
 #########################################################
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ingress
 spec:
   rules:
-  - host: testdevrepotemplate.127.0.0.1.nip.io
-    http:
-      paths:
-      - path: /
-        backend:
-          serviceName: api
-          servicePort: 3000
+    - host: mqpb.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /
+            backend:
+              service:
+                name: api
+                port:
+                  number: 3000
 
 ---
 #########################################################
@@ -72,18 +66,19 @@ spec:
         app: api
     spec:
       containers:
-      - name: api
-        image: testdevrepotemplate
-        envFrom:
-        - configMapRef:
-            name: common-env
-        env:
-          - name: SERVICES
-            value: apiService/api
-          - name: PORT
-            value: "3000"
-        ports:
-          - containerPort: 3000
+        - name: api
+          image: mqpb
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: common-env
+          env:
+            - name: SERVICES
+              value: apiService/api
+            - name: PORT
+              value: '3000'
+          ports:
+            - containerPort: 3000
 
 ---
 #########################################################
@@ -104,14 +99,14 @@ spec:
         app: greeter
     spec:
       containers:
-      - name: greeter
-        image: testdevrepotemplate
-        envFrom:
-        - configMapRef:
-            name: common-env
-        env:
-          - name: SERVICES
-            value: greeterService/greeter
+        - name: greeter
+          image: mqpb
+          envFrom:
+            - configMapRef:
+                name: common-env
+          env:
+            - name: SERVICES
+              value: greeterService/greeter
 
 ---
 #########################################################
@@ -132,14 +127,14 @@ spec:
         app: products
     spec:
       containers:
-      - name: products
-        image: testdevrepotemplate
-        envFrom:
-        - configMapRef:
-            name: common-env
-        env:
-          - name: SERVICES
-            value: productService/products
+        - name: products
+          image: mqpb
+          envFrom:
+            - configMapRef:
+                name: common-env
+          env:
+            - name: SERVICES
+              value: productService/products
 
 ---
 #########################################################
@@ -208,12 +203,4 @@ spec:
     - port: 27017
       targetPort: 27017
   selector:
-    app: mongo          
-
-
-
-
-
-
-
-
+    app: mongo

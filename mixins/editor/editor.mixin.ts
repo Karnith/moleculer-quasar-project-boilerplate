@@ -174,7 +174,7 @@ export const editorMixin = (mixinOptions?: any) => {
 				// check the sgwgger editor html to see if changes need to be mae, then make them.
 				dryRun
 					.then((results) => {
-						if (results[0]['hasChanged'] == true) {
+						if (results[0]['hasChanged'] === true) {
 							// @ts-ignore
 							this.logger.debug(
 								`♻ Found matches in swagger editor html, updating file...`,
@@ -243,6 +243,7 @@ export const editorMixin = (mixinOptions?: any) => {
 				aliases: {
 					// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 					// @ts-ignore
+					// deepcode ignore NoRateLimitingForExpensiveWebOperation: rate limited by api gateway
 					'GET /swagger.yaml'(req: any, res: any): void {
 						try {
 							const swJSON = require('../../swagger.json');
