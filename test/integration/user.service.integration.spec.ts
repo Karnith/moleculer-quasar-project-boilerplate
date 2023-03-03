@@ -58,7 +58,7 @@ const authService = broker.createService(AuthService);
 const version = `v${testingService.version}`;
 const authversion = `v${authService.version}`;
 
-xdescribe('Integration tests for Users service', () => {
+describe('Integration tests for Users service', () => {
 	let firstStart = true;
 	let server: string;
 	let testUrl = '';
@@ -90,7 +90,7 @@ xdescribe('Integration tests for Users service', () => {
 	});
 	beforeEach(() => expect.hasAssertions());
 
-	xdescribe('login', () => {
+	describe('login', () => {
 		beforeEach(() => {
 			testUrl = '/auth/login';
 		});
@@ -159,7 +159,7 @@ xdescribe('Integration tests for Users service', () => {
 		});
 	});
 
-	xdescribe('Get User', () => {
+	describe('Get User', () => {
 		beforeEach(async () => {
 			testUrl = `/api/${version}/user`;
 			token = await getJWT(server);
@@ -168,7 +168,6 @@ xdescribe('Integration tests for Users service', () => {
 			await checkWrongToken(server, testUrl);
 		});
 		it('info', async () => {
-			console.log(token);
 			const response = await request(server).get(testUrl).set(AUTHORIZATION_KEY, token);
 			expect(response.status).toBe(constants.HTTP_STATUS_OK);
 			expect(response.body)
@@ -181,7 +180,7 @@ xdescribe('Integration tests for Users service', () => {
 		});
 	});
 
-	xdescribe('Get All Users', () => {
+	describe('Get All Users', () => {
 		beforeEach(async () => {
 			testUrl = `/api/${version}/user/list`;
 			token = await getJWT(server);
@@ -190,9 +189,7 @@ xdescribe('Integration tests for Users service', () => {
 			await checkWrongToken(server, testUrl);
 		});
 		it('list', async () => {
-			console.log(token);
 			const response = await request(server).get(testUrl).set(AUTHORIZATION_KEY, token);
-			console.log(response.status);
 			expect(response.status).toBe(constants.HTTP_STATUS_OK);
 			expect(response.body)
 				.toBeDefined()
@@ -209,7 +206,7 @@ xdescribe('Integration tests for Users service', () => {
 		});
 	});
 
-	xdescribe('Get User by id', () => {
+	describe('Get User by id', () => {
 		beforeEach(async () => {
 			testUrl = `/api/${version}/user/${disabledUser._id}`;
 			token = await getJWT(server);
@@ -234,7 +231,7 @@ xdescribe('Integration tests for Users service', () => {
 		});
 	});
 
-	xdescribe('Create Users', () => {
+	describe('Create Users', () => {
 		const password = randString();
 		const user: UserCreateParams = {
 			login: `test-${randString()}`,
@@ -278,7 +275,7 @@ xdescribe('Integration tests for Users service', () => {
 		});
 	});
 
-	xdescribe('Update user by id', () => {
+	describe('Update user by id', () => {
 		const user: UserUpdateParams = {
 			...simpleUser,
 			firstName: 'other name',
@@ -332,7 +329,7 @@ xdescribe('Integration tests for Users service', () => {
 		});
 	});
 
-	xdescribe('Delete User by id', () => {
+	describe('Delete User by id', () => {
 		beforeEach(async () => {
 			testUrl = `/api/${version}/user/${disabledUser._id}`;
 			token = await getJWT(server);
