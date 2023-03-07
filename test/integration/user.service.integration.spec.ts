@@ -111,7 +111,7 @@ describe('Integration tests for Users service', () => {
 				.toBeObject()
 				.toContainEntries([
 					['field', 'login/password'],
-					['message', 'not found'],
+					['message', 'login/password incorrect'],
 				]);
 		});
 		it('wrong password', async () => {
@@ -131,7 +131,7 @@ describe('Integration tests for Users service', () => {
 				.toBeObject()
 				.toContainEntries([
 					['field', 'login/password'],
-					['message', 'not found'],
+					['message', 'login/password incorrect'],
 				]);
 		});
 		it('disabled user', async () => {

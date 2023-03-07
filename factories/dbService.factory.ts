@@ -3,6 +3,7 @@ import {
 	ServiceStarted,
 	ServiceStopped,
 } from '@ourparentcenter/moleculer-decorators-extended';
+import { removeForbiddenFields, updateAuthor } from '@ServiceHelpers';
 import { ServiceBroker, ServiceSchema } from 'moleculer';
 import { MoleculerDBService, UserJWT } from '../types';
 
@@ -18,50 +19,14 @@ export class BaseServiceWithDB<ServiceSettingsOptions, Entity> extends Moleculer
 	@Method
 	public updateAuthor<T extends Record<string, any>>(
 		record: T,
-		mod: {
-			creator?: UserJWT;
-			modifier?: UserJWT;
-		},
+		mod: { creator?: UserJWT; modifier?: UserJWT },
 	) {
-		const { creator, modifier } = mod;
-		let result = { ...record };
-		if (creator || creator == null || creator == undefined) {
-			if (creator != null || creator != undefined) {
-				result = { ...result, createdBy: creator._id, createdDate: new Date() };
-			} else {
-				if (!result.createdDate) {
-					result = { ...result, createdBy: null, createdDate: new Date() };
-				}
-			}
-		}
-		if (modifier || modifier == null || modifier == undefined) {
-			if (modifier != null || modifier != undefined) {
-				result = { ...result, lastModifiedBy: modifier._id, lastModifiedDate: new Date() };
-			} else {
-				result = { ...result, lastModifiedBy: null, lastModifiedDate: new Date() };
-			}
-		}
-		return result;
+		return updateAuthor<T>(record, mod);
 	}
 
 	@Method
-	public removeForbiddenFields<T extends Record<string, any>>(record: T) {
-		const result = { ...record };
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-ignore
-		delete result._id;
-		// delete (user as any).id;
-
-		// delete result.login;
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-ignore
-		delete result.createdDate;
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-ignore
-		delete result.createdBy;
-		delete result.lastModifiedDate;
-		delete result.lastModifiedBy;
-		return result;
+	public removeForbiddenFields<T extends Record<string, any>>(record: T, fields: string[] = []) {
+		return removeForbiddenFields<T>(record, fields);
 	}
 
 	@ServiceStarted()

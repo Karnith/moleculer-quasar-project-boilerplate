@@ -238,6 +238,7 @@ export default class UserService extends BaseServiceWithDB<UserServiceSettingsOp
 
 		const parsedEntity = this.removeForbiddenFields<IUser>(
 			new JsonConvert().deserializeObject(entity, UserEntity).getMongoEntity(),
+			['_id', 'createdBy', 'createdDate', 'lastModifiedBy', 'lastModifiedDate'],
 		);
 		const modEntity = this.updateAuthor(parsedEntity, { creator: ctx.meta.user || null });
 		const addVerificationToken = this.addVerificationToken(
@@ -301,16 +302,32 @@ export default class UserService extends BaseServiceWithDB<UserServiceSettingsOp
 			const usrLogin = login.includes('@') ? 'email' : 'login';
 			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 			// @ts-ignore
-			const result: any = await this.adapter.findOne<IUser>({ [usrLogin]: login });
-			if (!result) {
-				this.logger.error('♻ User not found');
-				throw new moleculer.Errors.MoleculerClientError(
-					userErrorMessage.WRONG,
-					userErrorCode.WRONG,
-					'',
-					[{ field: 'login/password', message: 'not found' }],
-				);
-			} else if (!result.active) {
+			const result: any = await this.adapter
+				.findOne<IUser>({ [usrLogin]: login } as any)
+				.then((res) => {
+					if (res) {
+						this.logger.debug('♻ User found');
+						return res;
+					}
+					this.logger.error('♻ login/password incorrect');
+					throw new moleculer.Errors.MoleculerClientError(
+						userErrorMessage.WRONG,
+						userErrorCode.WRONG,
+						'',
+						[{ field: 'login/password', message: 'login/password incorrect' }],
+					);
+				})
+				.catch((err) => {
+					this.logger.error('♻ login/password incorrect: ', err);
+					throw new moleculer.Errors.MoleculerClientError(
+						userErrorMessage.WRONG,
+						userErrorCode.WRONG,
+						'',
+						[{ field: 'login/password', message: 'login/password incorrect' }],
+					);
+				});
+
+			if (!result.active) {
 				this.logger.error('♻ User not active');
 				throw new moleculer.Errors.MoleculerClientError(
 					userErrorMessage.NOT_ACTIVE,
@@ -327,7 +344,7 @@ export default class UserService extends BaseServiceWithDB<UserServiceSettingsOp
 					userErrorMessage.WRONG,
 					userErrorCode.WRONG,
 					'',
-					[{ field: 'login/password', message: 'not found' }],
+					[{ field: 'login/password', message: 'login/password incorrect' }],
 				);
 			}
 
@@ -469,8 +486,9 @@ export default class UserService extends BaseServiceWithDB<UserServiceSettingsOp
 		entity.password = encryptPassword(entity.password);
 		const parsedEntity = this.removeForbiddenFields<IUser>(
 			new JsonConvert().deserializeObject(entity, UserEntity).getMongoEntity(),
+			['_id', 'createdBy', 'createdDate', 'lastModifiedBy', 'lastModifiedDate'],
 		);
-		const modEntity = this.updateAuthor(parsedEntity, { creator: ctx.meta.user });
+		const modEntity = this.updateAuthor<IUser>(parsedEntity, { creator: ctx.meta.user });
 		const requireToken = () => {
 			if (
 				entity.hasOwnProperty('requireRegToken') &&
@@ -645,6 +663,7 @@ export default class UserService extends BaseServiceWithDB<UserServiceSettingsOp
 			new JsonConvert()
 				.deserializeObject({ ...user, ...ctx.params }, UserEntity)
 				.getMongoEntity(),
+			['_id', 'createdBy', 'createdDate', 'lastModifiedBy', 'lastModifiedDate'],
 		);
 		this.logger.debug('♻ Updating modified by...');
 		const newUser = this.updateAuthor(

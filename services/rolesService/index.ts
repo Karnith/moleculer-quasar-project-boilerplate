@@ -24,6 +24,7 @@ import {
 	UserRoleCreateParams,
 	UserRoleDefault,
 	UserRoleDeleteParams,
+	UserRoleEvent,
 	UserRoleGetParams,
 	UserRoleUpdateParams,
 	// UserJWT,
@@ -32,6 +33,7 @@ import { JsonConvert } from 'json2typescript';
 import { /* IUser, */ RolesEntity } from '@Entities';
 import { BaseServiceWithDB, DBMixinFactory } from '@Factories';
 import { DbContextParameters } from 'moleculer-db';
+import { constants } from 'http2';
 
 const validateRoleBase: ActionParams = {
 	role: { type: 'string', optional: true },
@@ -107,8 +109,9 @@ const validateRoleBase: ActionParams = {
 			 *
 			 * @param {Context} ctx
 			 */
-			create: (ctx: Context<{ active: boolean }>) => {
+			create: (ctx: Context<{ active: boolean; systemLocked: boolean }>) => {
 				ctx.params.active = false;
+				ctx.params.systemLocked = false;
 			},
 		},
 	},
@@ -186,22 +189,42 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 		// @ts-ignore
 		delete ctx.params.id;
 		this.logger.debug('♻ Finding role by id: ', id);
-		const role = (await this.adapter.findById(id)) as IUserRole;
-		if (!role) {
+		const role = (await this.adapter
+			.findById(id)
+			.then((res) => {
+				if (res) {
+					return res;
+				}
+				this.logger.debug(`♻ Role id ${id} not found`);
+				throw new moleculer.Errors.MoleculerClientError(
+					roleErrorMessage.NOT_FOUND,
+					roleErrorCode.NOT_FOUND,
+				);
+			})
+			.catch((err) => {
+				this.logger.debug(`♻ Role id ${id} not found`);
+				throw new moleculer.Errors.MoleculerClientError(
+					roleErrorMessage.NOT_FOUND,
+					roleErrorCode.NOT_FOUND,
+					err,
+				);
+			})) as IUserRole;
+		/* if (!role) {
 			this.logger.debug(`♻ Role id ${id} not found`);
 			throw new moleculer.Errors.MoleculerClientError(
 				roleErrorMessage.NOT_FOUND,
 				roleErrorCode.NOT_FOUND,
 			);
-		}
+		} */
 		this.logger.debug(`♻ Found role, activating...`);
-		const parsedEntity = this.removeForbiddenFields(
+		const parsedEntity = this.removeForbiddenFields<IUserRole>(
 			new JsonConvert()
 				.deserializeObject({ ...role, ...ctx.params }, RolesEntity)
 				.getMongoEntity(),
+			['_id', 'createdBy', 'createdDate', 'lastModifiedBy', 'lastModifiedDate'],
 		);
 		this.logger.debug(`♻ Updating author on role`);
-		const newRole = this.updateAuthor(
+		const newRole = this.updateAuthor<IUserRole>(
 			{
 				...role,
 				...parsedEntity,
@@ -211,7 +234,27 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 			{ modifier: ctx.meta.user },
 		);
 
-		const result = await this.adapter.updateById(id, newRole);
+		const result = await this.adapter
+			.updateById(id, newRole)
+			.then((res) => {
+				if (res) {
+					this.logger.debug(`♻ Role updated: `, res);
+					ctx.meta.$statusCode = constants.HTTP_STATUS_ACCEPTED;
+					this.broker.emit('roles.updated', newRole);
+					return newRole;
+				}
+				throw new moleculer.Errors.MoleculerClientError(
+					roleErrorMessage.COULD_NOT_ACTIVATE,
+					roleErrorCode.COULD_NOT_ACTIVATE,
+				);
+			})
+			.catch((err) => {
+				this.logger.error(`♻ Error updating role: `, err);
+				throw new moleculer.Errors.MoleculerClientError(
+					roleErrorMessage.COULD_NOT_ACTIVATE,
+					roleErrorCode.COULD_NOT_ACTIVATE,
+				);
+			});
 		const transform = await this.transformDocuments(
 			ctx,
 			{ populate: ['createdBy', 'lastModifiedBy'] },
@@ -376,7 +419,7 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 		 * Service guard services allowed to connect
 		 */
 		restricted: ['api'],
-		roles: [UserRoleDefault.SUPERADMIN, UserRoleDefault.ADMIN],
+		// roles: [UserRoleDefault.SUPERADMIN, UserRoleDefault.ADMIN],
 		params: {
 			...validateRoleBase,
 		},
@@ -395,18 +438,42 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 			throw new moleculer.Errors.MoleculerClientError(
 				roleErrorMessage.DUPLICATED_ROLE,
 				roleErrorCode.DUPLICATED_ROLE,
+				'',
+				`♻ Role ${ctx.params.role} with id ${role.id} already exists. Please update it instead.`,
 			);
 		}
 		this.logger.debug(`♻ Creating role ${ctx.params.role}`);
-		const parsedEntity = this.removeForbiddenFields(
+		const parsedEntity = this.removeForbiddenFields<IUserRole>(
 			new JsonConvert().deserializeObject({ ...ctx.params }, RolesEntity).getMongoEntity(),
+			['_id', 'createdBy', 'createdDate', 'lastModifiedBy', 'lastModifiedDate'],
 		);
-		const newRole = this.updateAuthor(parsedEntity, {
+		const newRole = this.updateAuthor<IUserRole>(parsedEntity, {
 			creator: ctx.meta.user,
 			modifier: ctx.meta.user,
 		});
 
-		const result = await this._create(ctx, newRole);
+		const result = await this._create(ctx, newRole)
+			.then((res) => {
+				if (res) {
+					this.logger.debug(`♻ Role ${ctx.params.role} created successfully.`);
+					ctx.meta.$statusCode = constants.HTTP_STATUS_ACCEPTED;
+					this.broker.emit('roles.created', res);
+					return res;
+				}
+				this.logger.debug(`♻ Role ${ctx.params.role} could not be created.`);
+				throw new moleculer.Errors.MoleculerClientError(
+					roleErrorMessage.ROLE_NOT_CREATED,
+					roleErrorCode.ROLE_NOT_CREATED,
+				);
+			})
+			.catch((err) => {
+				this.logger.debug(`♻ Role ${ctx.params.role} could not be created.`);
+				throw new moleculer.Errors.MoleculerClientError(
+					roleErrorMessage.ROLE_NOT_CREATED,
+					roleErrorCode.ROLE_NOT_CREATED,
+					err,
+				);
+			});
 		const transform = await this.transformDocuments(
 			ctx,
 			{ populate: ['createdBy', 'lastModifiedBy'] },
@@ -465,14 +532,25 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 		const role = await this._get(
 			ctx,
 			await { ...params, populate: ['createdBy', 'lastModifiedBy'] },
-		);
-		if (!role) {
+		).then((res) => {
+			if (res) {
+				this.logger.debug(`♻ Role with id ${ctx.params.id} found`);
+				ctx.meta.$statusCode = constants.HTTP_STATUS_FOUND;
+				return res;
+			}
+			this.logger.debug(`♻ Role with id ${ctx.params.id} not found`);
+			throw new moleculer.Errors.MoleculerClientError(
+				roleErrorMessage.NOT_FOUND,
+				roleErrorCode.NOT_FOUND,
+			);
+		});
+		/* if (!role) {
 			this.logger.error(`♻ Role with id ${ctx.params.id} not found`);
 			throw new moleculer.Errors.MoleculerClientError(
 				roleErrorMessage.NOT_FOUND,
 				roleErrorCode.NOT_FOUND,
 			);
-		}
+		} */
 		this.logger.debug('♻ Returning role: ', role);
 		return role;
 	}
@@ -537,19 +615,34 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 		// @ts-ignore
 		delete ctx.params.id;
 		this.logger.debug(`♻ Attempting to update role with id ${ctx.params.id}`);
-		const role = (await this.adapter.findById(id)) as IUserRole;
-		if (!role) {
-			this.logger.error('♻ Role to update not found');
-			throw new moleculer.Errors.MoleculerClientError(
-				roleErrorMessage.NOT_FOUND,
-				roleErrorCode.NOT_FOUND,
-			);
-		}
+		const role = (await this.adapter
+			.findById(id)
+			.then((res) => {
+				if (res) {
+					this.logger.debug(`♻ Role with id ${ctx.params.id} found`);
+					return res;
+				}
+				this.logger.debug(`♻ Role with id ${ctx.params.id} not found`);
+				throw new moleculer.Errors.MoleculerClientError(
+					roleErrorMessage.NOT_FOUND,
+					roleErrorCode.NOT_FOUND,
+				);
+			})
+			.catch((err) => {
+				this.logger.error(`♻ Role with id ${ctx.params.id} not found`);
+				throw new moleculer.Errors.MoleculerClientError(
+					roleErrorMessage.NOT_FOUND,
+					roleErrorCode.NOT_FOUND,
+					'NOT_FOUND',
+					[{ field: 'id', message: 'Role not found', error: err }],
+				);
+			})) as IUserRole;
 		this.logger.debug('♻ Removing forbidden fields from found role');
-		const parsedEntity = this.removeForbiddenFields(
+		const parsedEntity = this.removeForbiddenFields<IUserRole>(
 			new JsonConvert().deserializeObject({ ...ctx.params }, RolesEntity).getMongoEntity(),
+			['_id', 'createdBy', 'createdDate', 'lastModifiedBy', 'lastModifiedDate'],
 		);
-		const newRole = this.updateAuthor(
+		const newRole = this.updateAuthor<IUserRole>(
 			{
 				...role,
 				...parsedEntity,
@@ -558,7 +651,29 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 			},
 			{ modifier: ctx.meta.user },
 		);
-		const result = await this.adapter.updateById(id, newRole);
+		const result = await this.adapter
+			.updateById(id, newRole)
+			.then((res) => {
+				if (res) {
+					this.logger.debug('♻ Role updated successfully');
+					ctx.meta.$statusCode = constants.HTTP_STATUS_ACCEPTED;
+					this.broker.emit('roles.updated', res);
+					return res;
+				}
+				this.logger.error('♻ Role update failed');
+				throw new moleculer.Errors.MoleculerClientError(
+					roleErrorMessage.UPDATE_FAILED,
+					roleErrorCode.UPDATE_FAILED,
+				);
+			})
+			.catch((err) => {
+				this.logger.error('♻ Role update failed');
+				throw new moleculer.Errors.MoleculerClientError(
+					roleErrorMessage.UPDATE_FAILED,
+					roleErrorCode.UPDATE_FAILED,
+					err,
+				);
+			});
 		const transform = await this.transformDocuments(
 			ctx,
 			{ populate: ['createdBy', 'lastModifiedBy'] },
@@ -605,18 +720,48 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 	})
 	async removeRole(ctx: Context<UserRoleDeleteParams, UserAuthMeta>) {
 		const { id } = ctx.params;
-		this.logger.debug('♻ Removing role by id');
-		const role = (await this.adapter.findById(id)) as IUserRole;
-		if (!role) {
-			this.logger.error(`♻ Role id ${id} not found`);
+		this.logger.debug('♻ Checking if user is deleting role they are using');
+		const recordToDelete = (await this._get(ctx, { id: id }).then((res) => {
+			if (res) {
+				this.logger.debug('♻ Role found');
+				return res;
+			}
+			this.logger.error('♻ Role not found');
 			throw new moleculer.Errors.MoleculerClientError(
 				roleErrorMessage.NOT_FOUND,
 				roleErrorCode.NOT_FOUND,
 			);
+		})) as IUserRole;
+		if (ctx.meta.user.roles!.includes(recordToDelete.value as UserRoleDefault)) {
+			this.logger.error('♻ Cannot delete role user is currently using');
+			throw new moleculer.Errors.MoleculerClientError(
+				roleErrorMessage.DELETE_ITSELF,
+				roleErrorCode.DELETE_ITSELF,
+			);
 		}
-		this.logger.debug(`♻ Found role, removing...`);
-		const result = await this.adapter.removeById(id);
-		this.logger.debug(`♻ Returning removed role: `, result);
-		return result;
+		const params = await this.sanitizeParams(ctx, ctx.params);
+		this.logger.debug('♻ Attempting to delete role...');
+		return await this._remove(ctx, params)
+			.then(async (record) => {
+				if (record) {
+					this.logger.debug('♻ Role deleted successfully');
+					ctx.meta.$statusCode = constants.HTTP_STATUS_ACCEPTED;
+					await this.broker.emit(UserRoleEvent.DELETED, { id: id });
+					return { recordsDeleted: record, record: recordToDelete };
+				}
+				this.logger.error('♻ Role deletion failed');
+				throw new moleculer.Errors.MoleculerClientError(
+					roleErrorMessage.DELETE_FAILED,
+					roleErrorCode.DELETE_FAILED,
+				);
+			})
+			.catch((err) => {
+				this.logger.error('♻ Role deletion error:', err);
+				throw new moleculer.Errors.MoleculerClientError(
+					roleErrorMessage.DELETE_FAILED,
+					roleErrorCode.DELETE_FAILED,
+					err,
+				);
+			});
 	}
 }

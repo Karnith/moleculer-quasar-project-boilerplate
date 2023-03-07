@@ -1,4 +1,4 @@
-import { UserJWT, UserLang, UserRoleDefault } from '../../types';
+import { UserJWT, UserLang, UserRoleDefault, UserRoleUpdateParams } from '../../types';
 import request from 'supertest';
 
 export const simpleUser: UserJWT = {
@@ -43,6 +43,23 @@ export const disabledUser: UserJWT = {
 	email: 'user1@admin.com',
 	langKey: UserLang.ENUS,
 	active: false,
+};
+
+export const testUserRole: UserRoleUpdateParams = {
+	id: '63f26703441301e9afcd6e57',
+	role: 'APPROVER',
+	value: 'ROLE_APPROVER',
+	langKey: UserLang.ENUS,
+	active: true,
+	systemLocked: true,
+};
+export const superAdminUserRole: UserRoleUpdateParams = {
+	id: '63f38c2fa7c75a13db9755d1',
+	role: 'SUPERADMIN',
+	value: 'ROLE_SUPERADMIN',
+	langKey: UserLang.ENUS,
+	active: true,
+	systemLocked: true,
 };
 
 export async function getJWT(

@@ -98,8 +98,7 @@ export default class AuthService extends BaseServiceWithDB<UserServiceSettingsOp
 					} */,
 				);
 			if (protectedHeader && payload.data._id) {
-				// returns user from payload _id
-				// return await this._get(ctx, { id: payload.data._id });
+				/* returns user from payload _id */
 				const user = await ctx.call('v1.user.id', { id: payload.data._id });
 				if (!user) {
 					this.logger.error('♻ Error: User not found or disabled');
@@ -146,27 +145,22 @@ export default class AuthService extends BaseServiceWithDB<UserServiceSettingsOp
 		},
 	})
 	async createJWT(ctx: Context<IUser>) {
-		try {
-			this.logger.debug('♻ Attempting to create user JWT...');
-			const user: IUser = ctx.params;
-			if (user && typeof user === 'object') {
-				if (!user.active) {
-					this.logger.error('♻ User not found or disabled');
-					throw new moleculer.Errors.MoleculerClientError(
-						userErrorMessage.WRONG,
-						userErrorCode.WRONG,
-						'500',
-						[{ message: 'Error: User not found or disabled' }],
-					);
-				} else {
-					this.logger.debug('♻ Generating user JWT...');
-					return await this.generateJWT(user);
-				}
+		this.logger.debug('♻ Attempting to create user JWT...');
+		const user: IUser = ctx.params;
+		if (user && typeof user === 'object') {
+			if (!user.active) {
+				this.logger.error('♻ User not found or disabled');
+				throw new moleculer.Errors.MoleculerClientError(
+					userErrorMessage.WRONG,
+					userErrorCode.WRONG,
+					'500',
+					[{ message: 'Error: User not found or disabled' }],
+				);
 			}
-		} catch (err) {
-			this.logger.error('♻ An error occured creating User JWT: ', err);
-			return err;
 		}
+
+		this.logger.debug('♻ Generating user JWT...');
+		return await this.generateJWT(user);
 	}
 
 	@Method
@@ -177,21 +171,24 @@ export default class AuthService extends BaseServiceWithDB<UserServiceSettingsOp
 		const key = Buffer.from(this.settings.JWT_SECRET, 'hex');
 		this.logger.debug('♻ Setting JWT exiration date');
 		exp.setDate(exp.getDate() + 60);
-		try {
-			const userJWT = await new EncryptJWT({
-				data: user,
-				// exp: Math.floor(exp.getTime() / 1000),
+		const userJWT = await new EncryptJWT({
+			data: user,
+			// exp: Math.floor(exp.getTime() / 1000),
+		})
+			.setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
+			// .setIssuedAt()
+			// .setIssuer()
+			// .setAudience()
+			.setExpirationTime(Math.floor(exp.getTime() / 1000))
+			.encrypt(key)
+			.then((jwt) => {
+				this.logger.debug('♻ JWT generated');
+				return jwt;
 			})
-				.setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
-				// .setIssuedAt()
-				// .setIssuer()
-				// .setAudience()
-				.setExpirationTime(Math.floor(exp.getTime() / 1000))
-				.encrypt(key);
-			return userJWT;
-		} catch (err: any) {
-			this.logger.debug('♻ Error generating JWT: ', err);
-			return err;
-		}
+			.catch((err: any) => {
+				this.logger.debug('♻ Error generating JWT: ', err);
+				return err;
+			});
+		return userJWT;
 	}
 }

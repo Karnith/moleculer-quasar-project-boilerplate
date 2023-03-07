@@ -249,7 +249,7 @@ describe('Unit tests for User service', () => {
 				.toBeObject()
 				.toContainEntries([
 					['code', 422],
-					['data', [{ field: 'login/password', message: 'not found' }]],
+					['data', [{ field: 'login/password', message: 'login/password incorrect' }]],
 				]);
 		});
 		it('login wrong password', async () => {
@@ -260,7 +260,7 @@ describe('Unit tests for User service', () => {
 				.toBeObject()
 				.toContainEntries([
 					['code', 422],
-					['data', [{ field: 'login/password', message: 'not found' }]],
+					['data', [{ field: 'login/password', message: 'login/password incorrect' }]],
 				]);
 		});
 		it('login disabled', async () => {

@@ -1,0 +1,49 @@
+/* eslint-disable @typescript-eslint/explicit-member-accessibility */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+'use strict';
+import { Action, Service } from '@ourparentcenter/moleculer-decorators-extended';
+import { Context } from 'moleculer';
+import { BaseServiceWithDB } from '../../../../factories';
+/**
+ * @typedef {import('moleculer').Context} Context Moleculer's Context
+ */
+@Service({
+	name: 'ServiceWithDBFromFactory',
+	mergeActions: true,
+	/**
+	 * Settings
+	 */
+	settings: {
+		// Validator for the `create` & `insert` actions.
+		entityValidator: {
+			name: 'string|min:3',
+		},
+	},
+})
+// @ts-ignore
+export default class ServiceWithDBFromFactory extends BaseServiceWithDB<
+	{ name: string },
+	{ name: string }
+> {
+	@Action({
+		name: 'hello',
+		params: {},
+	})
+	// @ts-ignore
+	async hello() {
+		this.logger.debug('♻ Returning hello string');
+		return 'Hello Moleculer';
+	}
+
+	@Action({
+		name: 'welcome',
+		params: {
+			name: 'string',
+		},
+	})
+	// @ts-ignore
+	async welcome(ctx: Context<{ name: string }>) {
+		this.logger.debug('♻ Returning Welcome <user name> string');
+		return `Welcome, ${ctx.params.name}`;
+	}
+}
