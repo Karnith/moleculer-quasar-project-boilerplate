@@ -1,6 +1,7 @@
+import { Method } from '@ourparentcenter/moleculer-decorators-extended';
 /* eslint-disable prefer-arrow/prefer-arrow-functions */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-'use strict';
+('use strict');
 /**
  * Mixin for swagger
  */
@@ -98,6 +99,86 @@ export const editorMixin = (mixinOptions?: any) => {
 					);
 				}
 			},
+
+			async getSwaggerFile(req: any, res: any) {
+				try {
+					const ctx = req.$ctx;
+					const swJSON = await ctx.call('api.getOpenApiSchema');
+					try {
+						ctx.meta.responseType = 'application/json';
+						// @ts-ignore
+						// const generatedScheme = this.generateOpenAPISchema();
+						const generatedScheme = this.generateOpenAPISchema();
+						// @ts-ignore
+						this.logger.debug('♻ Checking if Swagger JSON schema needs updating...');
+						if (isEqual(swJSON, generatedScheme)) {
+							// @ts-ignore
+							this.logger.debug(
+								'♻ No changes needed, swagger json schema has the correct values',
+							);
+						} else {
+							// @ts-ignore
+							this.logger.debug(
+								'♻ Swagger JSON schema needs updating, updating file...',
+							);
+							writeFileSync(
+								'./swagger.json',
+								JSON.stringify(generatedScheme, null, 4),
+								'utf8',
+							);
+							// @ts-ignore
+							this.logger.debug(`♻ Updated swagger JSON`);
+						}
+					} catch (err) {
+						throw new MoleculerServerError(
+							'♻ Error updating swagger JSON schema',
+							500,
+							'UNABLE_UPDATE_SWAGGER_JSON',
+							{ err },
+						);
+					}
+
+					ctx.meta.responseType = 'application/x-yaml';
+					// @ts-ignore
+					const generatedYAML = this.generateYAML(JSON.stringify(swJSON));
+					const YAMLFile = existsSync('./swagger.yaml');
+
+					if (!YAMLFile) {
+						// @ts-ignore
+						this.logger.warn('♻ No YAML file found, creating it.');
+						writeFileSync('./swagger.yaml', generatedYAML, 'utf8');
+						return res.end(generatedYAML);
+					} else {
+						const swYAML = YAML.load(readFileSync('./swagger.yaml', 'utf8'));
+
+						// @ts-ignore
+						this.logger.debug('♻ Checking if Swagger YAML schema needs updating...');
+						if (isEqual(swYAML, swJSON)) {
+							// @ts-ignore
+							this.logger.debug(
+								'♻ No changes needed, swagger YAML schema has the correct values',
+							);
+							return res.end(generatedYAML);
+						} else {
+							// @ts-ignore
+							this.logger.debug(
+								'♻ Swagger YAML schema needs updating, updating file...',
+							);
+							writeFileSync('./swagger.yaml', generatedYAML, 'utf8');
+							// @ts-ignore
+							this.logger.debug(`♻ Updated swagger YAML`);
+							return res.end(generatedYAML);
+						}
+					}
+				} catch (err) {
+					throw new MoleculerServerError(
+						`♻ Error updating swagger YAML schema`,
+						500,
+						'UNABLE_UPDATE_YAML_SCHEME',
+						{ err },
+					);
+				}
+			},
 		},
 
 		async created() {
@@ -189,87 +270,11 @@ export const editorMixin = (mixinOptions?: any) => {
 					// @ts-ignore
 					// deepcode ignore NoRateLimitingForExpensiveWebOperation: rate limited by api gateway
 					async 'GET /swagger.yaml'(req: any, res: any): void {
-						try {
-							const ctx = req.$ctx;
-							const swJSON = await ctx.call('api.getOpenApiSchema');
-							try {
-								ctx.meta.responseType = 'application/json';
-								// @ts-ignore
-								// const generatedScheme = this.generateOpenAPISchema();
-								const generatedScheme = this.generateOpenAPISchema();
-								// @ts-ignore
-								this.logger.debug(
-									'♻ Checking if Swagger JSON schema needs updating...',
-								);
-								if (isEqual(swJSON, generatedScheme)) {
-									// @ts-ignore
-									this.logger.debug(
-										'♻ No changes needed, swagger json schema has the correct values',
-									);
-								} else {
-									// @ts-ignore
-									this.logger.debug(
-										'♻ Swagger JSON schema needs updating, updating file...',
-									);
-									writeFileSync(
-										'./swagger.json',
-										JSON.stringify(generatedScheme, null, 4),
-										'utf8',
-									);
-									// @ts-ignore
-									this.logger.debug(`♻ Updated swagger JSON`);
-								}
-							} catch (err) {
-								throw new MoleculerServerError(
-									'♻ Error updating swagger JSON schema',
-									500,
-									'UNABLE_UPDATE_SWAGGER_JSON',
-									{ err },
-								);
-							}
-
-							ctx.meta.responseType = 'application/x-yaml';
-							// @ts-ignore
-							const generatedYAML = this.generateYAML(JSON.stringify(swJSON));
-							const YAMLFile = existsSync('./swagger.yaml');
-
-							if (!YAMLFile) {
-								// @ts-ignore
-								this.logger.warn('♻ No YAML file found, creating it.');
-								writeFileSync('./swagger.yaml', generatedYAML, 'utf8');
-								return res.end(generatedYAML);
-							} else {
-								const swYAML = YAML.load(readFileSync('./swagger.yaml', 'utf8'));
-
-								// @ts-ignore
-								this.logger.debug(
-									'♻ Checking if Swagger YAML schema needs updating...',
-								);
-								if (isEqual(swYAML, swJSON)) {
-									// @ts-ignore
-									this.logger.debug(
-										'♻ No changes needed, swagger YAML schema has the correct values',
-									);
-									return res.end(generatedYAML);
-								} else {
-									// @ts-ignore
-									this.logger.debug(
-										'♻ Swagger YAML schema needs updating, updating file...',
-									);
-									writeFileSync('./swagger.yaml', generatedYAML, 'utf8');
-									// @ts-ignore
-									this.logger.debug(`♻ Updated swagger YAML`);
-									return res.end(generatedYAML);
-								}
-							}
-						} catch (err) {
-							throw new MoleculerServerError(
-								`♻ Error updating swagger YAML schema`,
-								500,
-								'UNABLE_UPDATE_YAML_SCHEME',
-								{ err },
-							);
-						}
+						// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+						// @ts-ignore
+						this.logger.debug('♻ Serving swagger.yaml');
+						// @ts-ignore
+						this.getSwaggerFile(req, res);
 					},
 				},
 

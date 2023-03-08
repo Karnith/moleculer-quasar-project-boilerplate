@@ -7,7 +7,7 @@ import { Context, Errors } from 'moleculer';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import ApiGateway from 'moleculer-web';
-import { Service, Method } from '@ourparentcenter/moleculer-decorators-extended';
+import { Service, Method, Action } from '@ourparentcenter/moleculer-decorators-extended';
 import pick from 'lodash/pick';
 import { openAPIMixin, editorMixin, swMiddleware, swStats } from '@Mixins';
 import { Config } from '../../common';
@@ -117,19 +117,17 @@ import { BaseService } from '@Factories';
 				autoAliases: false,
 
 				aliases: {
-					// swagger stats dashboard route at root
 					'GET /'(req: any, res: any) {
-						res.statusCode = 302;
-						res.setHeader('Location', '/api/dashboard/');
-						return res.end();
+						// @ts-ignore
+						this.apiDashboard(res);
 					},
 					'GET /stats'(req: any, res: any) {
-						res.setHeader('Content-Type', 'application/json; charset=utf-8');
-						return res.end(JSON.stringify(swStats.getCoreStats()));
+						// @ts-ignore
+						this.getStats(res);
 					},
 					'GET /metrics'(req: any, res: any) {
-						res.setHeader('Content-Type', 'application/json; charset=utf-8');
-						return res.end(JSON.stringify(swStats.getPromStats()));
+						// @ts-ignore
+						this.getMetrics(res);
 					},
 				},
 				/**
@@ -195,6 +193,16 @@ import { BaseService } from '@Factories';
 			options: {},
 		},
 	},
+	/* methods: {
+		apiDashboard(ctx: any): void {
+			// @ts-ignore
+			this.logger.warn('♻ Redirecting to api dashboard');
+			ctx.meta.$statusCode = 302;
+			ctx.meta.$location = '/api/dashboard';
+			console.log('request ctx: ', ctx);
+			return;
+		},
+	}, */
 })
 export default class ApiService extends BaseService {
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
@@ -219,6 +227,27 @@ export default class ApiService extends BaseService {
 
 		err.code === 422 ? error422() : nonError422();
 		return this.logResponse(req, res, err ? err.ctx : null);
+	}
+
+	@Method
+	apiDashboard(res: any): void {
+		this.logger.debug('♻ Redirecting to api dashboard');
+		this.sendRedirect(res, '/api/dashboard/', 302);
+		return;
+	}
+
+	@Method
+	getStats(res: any) {
+		this.logger.debug('♻ Sending sw stats');
+		res.setHeader('Content-Type', 'application/json; charset=utf-8');
+		return res.end(JSON.stringify(swStats.getCoreStats()));
+	}
+
+	@Method
+	getMetrics(res: any) {
+		this.logger.debug('♻ Sending sw metrics');
+		res.setHeader('Content-Type', 'application/json; charset=utf-8');
+		return res.end(JSON.stringify(swStats.getPromStats()));
 	}
 
 	/**
