@@ -29,25 +29,25 @@ const getValue = (text?: string, defaultValud?: string | boolean) => {
 
 const HOST_NAME = os.hostname().toLowerCase();
 
-const getDbInfo = (where: string, what: string, defaultValue: string) => {
+const getDbInfo = (db: string, what: string, defaultValue?: string) => {
 	try {
-		const value = process.env[`DB_${where}_${what}`];
+		const value = process.env[`DB_${db}_${what}`];
 		const generic = process.env[`DB_GENERIC_${what}`];
 		return value || generic || defaultValue;
 	} catch (err) {
-		console.log(`getDBInfo error ${where || what}: `, err);
+		console.log(`getDBInfo error ${db || what}: `, err);
 		return;
 	}
 };
 
-const genericDbInfo = (where: string): DBInfo => ({
-	dialect: getDbInfo(where, 'DIALECT', 'local') as DBDialog,
-	user: getDbInfo(where, 'USER', '')!,
-	password: getDbInfo(where, 'PASSWORD', '')!,
-	host: getDbInfo(where, 'HOST', '')!,
-	port: +getDbInfo(where, 'PORT', '0')!,
-	dbname: getDbInfo(where, 'DBNAME', '')!,
-	collection: getDbInfo(where, 'COLLECTION', where.toLowerCase())!,
+const genericDbInfo = (db: string): DBInfo => ({
+	dialect: getDbInfo(db, 'DIALECT', 'local') as DBDialog,
+	user: getDbInfo(db, 'USER')!,
+	password: getDbInfo(db, 'PASSWORD')!,
+	host: getDbInfo(db, 'HOST')!,
+	port: +getDbInfo(db, 'PORT', '0')!,
+	dbname: getDbInfo(db, 'DBNAME')!,
+	collection: getDbInfo(db, 'COLLECTION', db.toLowerCase())!,
 });
 
 export default class ConfigClass {

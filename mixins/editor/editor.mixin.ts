@@ -13,9 +13,7 @@ import { replaceInFile } from 'replace-in-file';
 import YAML from 'js-yaml';
 import { Config } from '../../common';
 import path from 'path';
-import swaggerJSDoc from 'swagger-jsdoc';
-import * as pkg from '../../package.json';
-import { swComponents, swSecurity } from '../swComponents';
+import { generateOpenAPISchema } from '@ServiceHelpers';
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const MoleculerServerError = Errors.MoleculerServerError;
 const isJSON = (str: any) => {
@@ -63,50 +61,7 @@ export const editorMixin = (mixinOptions?: any) => {
 			/**
 			 * Generate OpenAPI Schema
 			 */
-			generateOpenAPISchema(): any {
-				try {
-					const swaggerDefinition = {
-						openapi: '3.0.1',
-						info: {
-							title: `${pkg.name} API Documentation`, // Title of the documentation
-							description:
-								// eslint-disable-next-line max-len
-								'Moleculer JS Microservice Boilerplate with Typescript, TypeORM, CLI, Service Clients, Swagger, Jest, Docker, Eslint support and everything you will ever need to deploy rock solid projects..', // Short description of the app
-							version: pkg.version, // Version of the app
-						},
-						servers: [
-							{
-								url: `//${Config.SWAGGER_HOST}:${Config.SWAGGER_PORT}`, // base url to server
-							},
-						],
-						components: swComponents,
-						security: swSecurity,
-					};
-					// Options for the swagger docs
-					const options = {
-						// Import swaggerDefinitions
-						definition: swaggerDefinition,
-						explorer: true,
-						enableCORS: false,
-
-						// Path to the API docs
-						// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-						// @ts-ignore
-						apis: JSON.parse(Config.SWAGGER_APIS),
-					};
-					// Initialize swagger-jsdoc
-					const swaggerSpec = swaggerJSDoc(options);
-
-					return swaggerSpec;
-				} catch (err) {
-					throw new MoleculerServerError(
-						'Unable to compile OpenAPI schema',
-						500,
-						'UNABLE_COMPILE_OPENAPI_SCHEMA',
-						{ err },
-					);
-				}
-			},
+			generateOpenAPISchema,
 
 			/**
 			 * Generate OpenAPI Schema
@@ -164,59 +119,48 @@ export const editorMixin = (mixinOptions?: any) => {
 				],
 			};
 
-			try {
-				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-				// @ts-ignore
-				this.logger.debug(
-					`♻ Testing for matches to modify in swagger editor html at ${pathToSwaggerEitorHtml}`,
-				);
-				const dryRun = replaceInFile({ dry: true, countMatches: true, ...options });
-				// check the sgwgger editor html to see if changes need to be mae, then make them.
-				dryRun
-					.then((results) => {
-						if (results[0]['hasChanged'] === true) {
-							// @ts-ignore
-							this.logger.debug(
-								`♻ Found matches in swagger editor html, updating file...`,
-							);
-							replaceInFile(options)
-								.then(
-									// @ts-ignore
-									this.logger.debug(
-										`♻ Updated swagger editor html at ${pathToSwaggerEitorHtml}`,
-									),
-								)
-								.catch((err) =>
-									// @ts-ignore
-									this.logger.error(
-										`♻ Error updating swagger editor html at ${pathToSwaggerEitorHtml}: ${err}`,
-									),
-								);
-						} else {
-							// @ts-ignore
-							this.logger.debug(
-								'♻ No changes needed, swagger editor html has the correct values',
-							);
-						}
-					})
-					.catch((err) => {
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-ignore
+			this.logger.debug(
+				`♻ Testing for matches to modify in swagger editor html at ${pathToSwaggerEitorHtml}`,
+			);
+			replaceInFile({ dry: true, countMatches: true, ...options })
+				.then((results) => {
+					if (results[0]['hasChanged'] === true) {
 						// @ts-ignore
-						this.logger.error(`♻ Error testing for matches: ${err}`);
-						throw new MoleculerServerError(
-							`♻ Error testing for matches in ${pathToSwaggerEitorHtml}`,
-							500,
-							'ERROR_TESTING_MATCHES',
-							{ err },
+						this.logger.debug(
+							`♻ Found matches in swagger editor html, updating file...`,
 						);
-					});
-			} catch (err) {
-				throw new MoleculerServerError(
-					`♻ Unable to update swagger editor html at ${pathToSwaggerEitorHtml}`,
-					500,
-					'UNABLE_EDIT_SWAGGER_HTML',
-					{ err },
-				);
-			}
+						replaceInFile(options)
+							.then(
+								// @ts-ignore
+								this.logger.debug(
+									`♻ Updated swagger editor html at ${pathToSwaggerEitorHtml}`,
+								),
+							)
+							.catch((err) =>
+								// @ts-ignore
+								this.logger.error(
+									`♻ Error updating swagger editor html at ${pathToSwaggerEitorHtml}: ${err}`,
+								),
+							);
+					} else {
+						// @ts-ignore
+						this.logger.debug(
+							'♻ No changes needed, swagger editor html has the correct values',
+						);
+					}
+				})
+				.catch((err) => {
+					// @ts-ignore
+					this.logger.error(`♻ Error testing for matches: ${err}`);
+					throw new MoleculerServerError(
+						`♻ Unable to update swagger editor html at ${pathToSwaggerEitorHtml}`,
+						500,
+						'UNABLE_EDIT_SWAGGER_HTML',
+						{ err },
+					);
+				});
 
 			// merge route with api gateway
 			const route = _.defaultsDeep(mixinOptions.routeOptions, {
@@ -244,13 +188,14 @@ export const editorMixin = (mixinOptions?: any) => {
 					// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 					// @ts-ignore
 					// deepcode ignore NoRateLimitingForExpensiveWebOperation: rate limited by api gateway
-					'GET /swagger.yaml'(req: any, res: any): void {
+					async 'GET /swagger.yaml'(req: any, res: any): void {
 						try {
-							const swJSON = require('../../swagger.json');
+							const ctx = req.$ctx;
+							const swJSON = await ctx.call('api.getOpenApiSchema');
 							try {
-								const ctx = req.$ctx;
 								ctx.meta.responseType = 'application/json';
 								// @ts-ignore
+								// const generatedScheme = this.generateOpenAPISchema();
 								const generatedScheme = this.generateOpenAPISchema();
 								// @ts-ignore
 								this.logger.debug(
@@ -283,7 +228,6 @@ export const editorMixin = (mixinOptions?: any) => {
 								);
 							}
 
-							const ctx = req.$ctx;
 							ctx.meta.responseType = 'application/x-yaml';
 							// @ts-ignore
 							const generatedYAML = this.generateYAML(JSON.stringify(swJSON));

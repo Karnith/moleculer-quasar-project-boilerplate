@@ -29,6 +29,8 @@ export const generateOpenAPISchema = (): any => {
 		};
 		// Options for the swagger docs
 		const options = {
+			// failOnErrors: true,
+			// verbose: true,
 			// Import swaggerDefinitions
 			definition: swaggerDefinition,
 			explorer: true,
@@ -44,6 +46,8 @@ export const generateOpenAPISchema = (): any => {
 
 		return swaggerSpec;
 	} catch (err) {
+		// @ts-ignore
+		this.logger.error('Unable to compile OpenAPI schema', err);
 		throw new MoleculerServerError(
 			'Unable to compile OpenAPI schema',
 			500,
