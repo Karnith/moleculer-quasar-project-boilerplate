@@ -209,13 +209,6 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 					err,
 				);
 			})) as IUserRole;
-		/* if (!role) {
-			this.logger.debug(`♻ Role id ${id} not found`);
-			throw new moleculer.Errors.MoleculerClientError(
-				roleErrorMessage.NOT_FOUND,
-				roleErrorCode.NOT_FOUND,
-			);
-		} */
 		this.logger.debug(`♻ Found role, activating...`);
 		const parsedEntity = this.removeForbiddenFields<IUserRole>(
 			new JsonConvert()
@@ -544,13 +537,6 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 				roleErrorCode.NOT_FOUND,
 			);
 		});
-		/* if (!role) {
-			this.logger.error(`♻ Role with id ${ctx.params.id} not found`);
-			throw new moleculer.Errors.MoleculerClientError(
-				roleErrorMessage.NOT_FOUND,
-				roleErrorCode.NOT_FOUND,
-			);
-		} */
 		this.logger.debug('♻ Returning role: ', role);
 		return role;
 	}

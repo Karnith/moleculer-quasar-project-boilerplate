@@ -1,7 +1,6 @@
-import { Method } from '@ourparentcenter/moleculer-decorators-extended';
 /* eslint-disable prefer-arrow/prefer-arrow-functions */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-('use strict');
+'use strict';
 /**
  * Mixin for swagger
  */

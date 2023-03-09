@@ -140,7 +140,7 @@ export default class UserService extends BaseServiceWithDB<UserServiceSettingsOp
 	 *    post:
 	 *      tags:
 	 *      - "Auth"
-	 *      summary: Activate role
+	 *      summary: Activate User
 	 *      description: Activate user by verification token
 	 *      operationId: activateUser
 	 *      parameters:

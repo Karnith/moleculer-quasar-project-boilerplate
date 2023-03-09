@@ -241,6 +241,7 @@ const brokerConfig: BrokerOptions = {
 	// Enable/disable built-in metrics function. More info: https://moleculer.services/docs/0.14/metrics.html
 	metrics: {
 		enabled: JSON.parse(Config.METRICS_ENABLED) || false,
+		collectProcessMetrics: JSON.parse(Config.METRICS_PROCESS) || false,
 		// Available built-in reporters: "Console", "CSV", "Event", "Prometheus", "Datadog", "StatsD"
 		reporter: {
 			type: Config.METRICS_TYPE || undefined,

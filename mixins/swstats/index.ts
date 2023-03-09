@@ -1,6 +1,7 @@
-import swStats from 'swagger-stats';
+import * as swStats from 'swagger-stats';
 import swaggerSpec from '../../swagger.json';
-import * as promClient from 'prom-client';
+
+const promClient = swStats.getPromClient();
 const tlBucket = 60000;
 const swMiddleware = swStats.getMiddleware({
 	name: 'swagger-stats',
