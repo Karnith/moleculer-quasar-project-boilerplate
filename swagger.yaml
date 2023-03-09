@@ -60,7 +60,7 @@ components:
         langKey:
           type: string
           description: User language
-          example: en
+          example: en-us
     Roles:
       type: object
       properties:
@@ -625,6 +625,37 @@ paths:
         '403':
           description: Server error
           content: {}
+  /auth/activate/{verificationToken}:
+    post:
+      tags:
+        - Auth
+      summary: Activate role
+      description: Activate user by verification token
+      operationId: activateUser
+      parameters:
+        - name: verificationToken
+          in: path
+          description: Verification Token of user
+          required: true
+          schema:
+            type: string
+            example: 5ec51b33ead6ef2b423e4089
+      responses:
+        '200':
+          description: Activate user result
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      _id:
+                        type: string
+                  - $ref: '#/components/schemas/Roles'
+        '422':
+          description: Missing parameters
+          content: {}
+      x-codegen-request-body-name: params
   /auth/register:
     post:
       tags:

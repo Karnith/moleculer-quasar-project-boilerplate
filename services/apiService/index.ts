@@ -215,7 +215,6 @@ export default class ApiService extends BaseService {
 				const field = e.field.split('.').pop();
 				o[field] = e.message;
 			});
-			// res.end(JSON.stringify({ errors: o }, null, 2));
 			this.sendResponse(req, res, JSON.stringify({ errors: o }, null, 2));
 		};
 		const nonError422 = () => {
@@ -233,7 +232,6 @@ export default class ApiService extends BaseService {
 	apiDashboard(res: any): void {
 		this.logger.debug('♻ Redirecting to api dashboard');
 		this.sendRedirect(res, '/api/dashboard/', 302);
-		return;
 	}
 
 	@Method
@@ -290,7 +288,7 @@ export default class ApiService extends BaseService {
 		if (ctx.meta.user) {
 			this.logger.error(logInfo);
 		}
-		this.logger.error(logInfo);
+		this.logger.error('♻ Error authenticating: ', logInfo);
 		return Promise.reject(error);
 	}
 

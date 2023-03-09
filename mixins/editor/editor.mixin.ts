@@ -99,7 +99,7 @@ export const editorMixin = (mixinOptions?: any) => {
 					);
 				}
 			},
-
+			// deepcode ignore NoRateLimitingForExpensiveWebOperation: rate limit handled by api gateway
 			async getSwaggerFile(req: any, res: any) {
 				try {
 					const ctx = req.$ctx;

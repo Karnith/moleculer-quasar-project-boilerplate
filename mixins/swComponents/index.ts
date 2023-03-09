@@ -68,7 +68,7 @@ export const swComponents = {
 				langKey: {
 					type: 'string',
 					description: 'User language',
-					example: 'en',
+					example: 'en-us',
 				},
 			},
 		},

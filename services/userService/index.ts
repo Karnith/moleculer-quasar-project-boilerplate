@@ -133,6 +133,41 @@ export default class UserService extends BaseServiceWithDB<UserServiceSettingsOp
 		return result;
 	}
 
+	/**
+	 *  @swagger
+	 *
+	 *  /auth/activate/{verificationToken}:
+	 *    post:
+	 *      tags:
+	 *      - "Auth"
+	 *      summary: Activate role
+	 *      description: Activate user by verification token
+	 *      operationId: activateUser
+	 *      parameters:
+	 *      - name: verificationToken
+	 *        in: path
+	 *        description: Verification Token of user
+	 *        required: true
+	 *        schema:
+	 *          type: string
+	 *          example: '5ec51b33ead6ef2b423e4089'
+	 *      responses:
+	 *        200:
+	 *          description: Activate user result
+	 *          content:
+	 *            application/json:
+	 *              schema:
+	 *                allOf:
+	 *                - type: object
+	 *                  properties:
+	 *                    _id:
+	 *                      type: string
+	 *                - $ref: '#/components/schemas/Roles'
+	 *        422:
+	 *          description: Missing parameters
+	 *          content: {}
+	 *      x-codegen-request-body-name: params
+	 */
 	@Action({
 		name: 'activate',
 		restricted: ['api'],
@@ -142,9 +177,27 @@ export default class UserService extends BaseServiceWithDB<UserServiceSettingsOp
 	})
 	async activateUser(ctx: Context<UserActivateParams, UserAuthMeta>) {
 		this.logger.debug('♻ Attempting to activate user...');
-		const foundUser: Record<string, unknown> = (await this.adapter.findOne({
-			verificationToken: ctx.params.verificationToken,
-		})) as Record<string, unknown>;
+		const foundUser: Record<string, unknown> = (await this.adapter
+			.findOne<UserActivateParams>({
+				verificationToken: ctx.params.verificationToken,
+			})
+			.then((user) => {
+				if (!user) {
+					this.logger.error('♻ User not found');
+					throw new moleculer.Errors.MoleculerClientError(
+						userErrorMessage.NOT_FOUND,
+						userErrorCode.NOT_FOUND,
+					);
+				}
+				return user;
+			})
+			.catch((err) => {
+				this.logger.error('♻ Error while activating user', err);
+				throw new moleculer.Errors.MoleculerClientError(
+					userErrorMessage.NOT_FOUND,
+					userErrorCode.NOT_FOUND,
+				);
+			})) as Record<string, unknown>;
 		this.logger.debug('♻ User found, activating user...');
 		const activateUser = await ctx.call('v1.user.update', { id: foundUser._id, active: true });
 		this.logger.debug('♻ Returning activated user object');
@@ -206,31 +259,28 @@ export default class UserService extends BaseServiceWithDB<UserServiceSettingsOp
 	async registerUser(ctx: Context<UserCreateParams, UserAuthMeta>) {
 		const entity = ctx.params;
 		this.logger.debug('♻ Checking if user login or email already exist...');
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-ignore
-		const foundLogin = await this.adapter.findOne<IUser>({ login: entity.login });
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-ignore
-		const foundEmail = await this.adapter.findOne<IUser>({ email: entity.email });
-		if (foundLogin) {
-			this.logger.error(`♻ User ${entity.login} already registered`);
-			throw new moleculer.Errors.MoleculerClientError(
-				userErrorMessage.DUPLICATED_LOGIN,
-				userErrorCode.DUPLICATED_LOGIN,
-				'',
-				[{ field: 'login', message: 'duplicated' }],
-			);
-		}
-
-		if (foundEmail) {
-			this.logger.error(`♻ User ${entity.email} already registered`);
-			throw new moleculer.Errors.MoleculerClientError(
-				userErrorMessage.DUPLICATED_EMAIL,
-				userErrorCode.DUPLICATED_EMAIL,
-				'',
-				[{ field: 'email', message: 'duplicated' }],
-			);
-		}
+		await this.adapter.findOne<IUser>({ login: entity.login } as IUser).then((user) => {
+			if (user) {
+				this.logger.error(`♻ User ${entity.login} already registered`);
+				throw new moleculer.Errors.MoleculerClientError(
+					userErrorMessage.DUPLICATED_LOGIN,
+					userErrorCode.DUPLICATED_LOGIN,
+					'',
+					[{ field: 'login', message: 'duplicated' }],
+				);
+			}
+		});
+		await this.adapter.findOne<IUser>({ email: entity.email } as IUser).then((user) => {
+			if (user) {
+				this.logger.error(`♻ User ${entity.email} already registered`);
+				throw new moleculer.Errors.MoleculerClientError(
+					userErrorMessage.DUPLICATED_EMAIL,
+					userErrorCode.DUPLICATED_EMAIL,
+					'',
+					[{ field: 'email', message: 'duplicated' }],
+				);
+			}
+		});
 
 		this.logger.debug('♻ User login and email not duplicated, continuing with user creation');
 		entity.password = encryptPassword(entity.password);

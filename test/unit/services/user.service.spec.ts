@@ -4,6 +4,7 @@ import AuthService from '../../../services/authService';
 import {
 	IUser,
 	IUserBase,
+	UserActivateParams,
 	UserAuthMeta,
 	UserCreateParams,
 	UserDeleteParams,
@@ -160,7 +161,8 @@ describe('Unit tests for User service', () => {
 
 	describe('create user', () => {
 		let user: IUserBase;
-		let context: Context<UserCreateParams, UserAuthMeta>;
+		let context: any;
+		let verificationToken: string;
 		beforeEach(() => {
 			const str = randString();
 			user = {
@@ -170,9 +172,12 @@ describe('Unit tests for User service', () => {
 				lastName: str,
 				roles: [UserRoleDefault.USER],
 				langKey: UserLang.ENUS,
-				active: true,
+				active: false,
 			};
-			context = new Context<UserCreateParams, UserAuthMeta>(broker, endpoint);
+			context = new Context<UserCreateParams, UserActivateParams, UserAuthMeta>(
+				broker,
+				endpoint,
+			);
 		});
 		it('create user with wrong data', async () => {
 			context.params = {} as UserCreateParams;
@@ -185,7 +190,7 @@ describe('Unit tests for User service', () => {
 		});
 		it('create user', async () => {
 			context.params = { ...user, password: randString() };
-			context.meta = { user: superAdminUser };
+			context.meta = { user: superAdminUser } as UserAuthMeta;
 			try {
 				const response = await service.createUser(context);
 				expect(response)
@@ -233,6 +238,84 @@ describe('Unit tests for User service', () => {
 				expect(err).toBeInstanceOf(moleculer.Errors.MoleculerClientError);
 			}
 			expect(spyBroadcast).not.toHaveBeenCalled();
+		});
+		it('registers user', async () => {
+			try {
+				context.params = {
+					...user,
+					password: randString(),
+				} as UserCreateParams;
+				const result = await service.registerUser(context);
+				expect(spyBroadcast).toHaveBeenCalled();
+				expect(result)
+					.toBeDefined()
+					.toBeObject()
+					.toContainEntries([
+						['login', user.login],
+						['email', user.email],
+						['firstName', user.firstName],
+						['lastName', user.lastName],
+						['roles', user.roles],
+						['langKey', user.langKey],
+						['verificationToken', expect.any(String)],
+						['active', false],
+					]);
+			} catch (err: any) {
+				console.log(err);
+				expect(err).toBeInstanceOf(moleculer.Errors.MoleculerClientError);
+			}
+		});
+		it('activates user', async () => {
+			context.params = {
+				...user,
+				password: randString(),
+			} as UserCreateParams;
+			await service
+				.registerUser(context)
+				.then(async (res: IUser) => {
+					expect(spyBroadcast).toHaveBeenCalled();
+					expect(res)
+						.toBeDefined()
+						.toBeObject()
+						.toContainEntries([
+							['login', user.login],
+							['email', user.email],
+							['firstName', user.firstName],
+							['lastName', user.lastName],
+							['roles', user.roles],
+							['langKey', user.langKey],
+							['verificationToken', expect.any(String)],
+							['active', false],
+						]);
+					context.params = {
+						verificationToken: res.verificationToken,
+					};
+					await service
+						.activateUser(context)
+						.then((res: IUser) => {
+							expect(spyBroadcast).toHaveBeenCalled();
+							expect(res)
+								.toBeDefined()
+								.toBeObject()
+								.toContainEntries([
+									['login', user.login],
+									['email', user.email],
+									['firstName', user.firstName],
+									['lastName', user.lastName],
+									['roles', user.roles],
+									['langKey', user.langKey],
+									['verificationToken', expect.any(String)],
+									['active', true],
+								]);
+						})
+						.catch((err: any) => {
+							return err;
+						});
+				})
+				.catch((err: any) => {
+					console.log(err);
+					expect(err).toBeInstanceOf(moleculer.Errors.MoleculerClientError);
+				});
 		});
 	});
 

@@ -11,7 +11,7 @@ import 'jest-chain';
 const JEST_TIMEOUT = 35 * 1000;
 jest.setTimeout(JEST_TIMEOUT);
 
-xdescribe("Test 'products' service", () => {
+describe("Test 'products' service", () => {
 	let version: string;
 
 	afterEach(async () => {

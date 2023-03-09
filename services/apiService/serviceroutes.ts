@@ -24,7 +24,7 @@ export const serviceRoutes = [
 			'GET /logout': 'v1.user.logout',
 			'GET /verify': 'v1.auth.resolveToken',
 			'POST /register': 'v1.user.register',
-			'POST /activate': 'v1.user.activate',
+			'POST /activate/:verificationToken': 'v1.user.activate',
 		},
 		// rate limit override for route
 		/* rateLimit: {
