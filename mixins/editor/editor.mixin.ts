@@ -99,76 +99,39 @@ export const editorMixin = (mixinOptions?: any) => {
 				}
 			},
 			// deepcode ignore NoRateLimitingForExpensiveWebOperation: rate limit handled by api gateway
-			async getSwaggerFile(req: any, res: any) {
+			async getSwaggerFile(req: any, res: any): Promise<any> {
 				try {
 					const ctx = req.$ctx;
 					const swJSON = await ctx.call('api.getOpenApiSchema');
-					try {
-						ctx.meta.responseType = 'application/json';
-						// @ts-ignore
-						// const generatedScheme = this.generateOpenAPISchema();
-						const generatedScheme = this.generateOpenAPISchema();
-						// @ts-ignore
-						this.logger.debug('♻ Checking if Swagger JSON schema needs updating...');
-						if (isEqual(swJSON, generatedScheme)) {
-							// @ts-ignore
-							this.logger.debug(
-								'♻ No changes needed, swagger json schema has the correct values',
-							);
-						} else {
-							// @ts-ignore
-							this.logger.debug(
-								'♻ Swagger JSON schema needs updating, updating file...',
-							);
-							writeFileSync(
-								'./swagger.json',
-								JSON.stringify(generatedScheme, null, 4),
-								'utf8',
-							);
-							// @ts-ignore
-							this.logger.debug(`♻ Updated swagger JSON`);
-						}
-					} catch (err) {
-						throw new MoleculerServerError(
-							'♻ Error updating swagger JSON schema',
-							500,
-							'UNABLE_UPDATE_SWAGGER_JSON',
-							{ err },
-						);
-					}
 
 					ctx.meta.responseType = 'application/x-yaml';
 					// @ts-ignore
 					const generatedYAML = this.generateYAML(JSON.stringify(swJSON));
 					const YAMLFile = existsSync('./swagger.yaml');
+					let swYAML;
 
-					if (!YAMLFile) {
-						// @ts-ignore
-						this.logger.warn('♻ No YAML file found, creating it.');
-						writeFileSync('./swagger.yaml', generatedYAML, 'utf8');
-						return res.end(generatedYAML);
-					} else {
-						const swYAML = YAML.load(readFileSync('./swagger.yaml', 'utf8'));
-
-						// @ts-ignore
-						this.logger.debug('♻ Checking if Swagger YAML schema needs updating...');
-						if (isEqual(swYAML, swJSON)) {
-							// @ts-ignore
-							this.logger.debug(
-								'♻ No changes needed, swagger YAML schema has the correct values',
-							);
-							return res.end(generatedYAML);
-						} else {
-							// @ts-ignore
-							this.logger.debug(
-								'♻ Swagger YAML schema needs updating, updating file...',
-							);
-							writeFileSync('./swagger.yaml', generatedYAML, 'utf8');
-							// @ts-ignore
-							this.logger.debug(`♻ Updated swagger YAML`);
-							return res.end(generatedYAML);
-						}
-					}
+					return !YAMLFile
+						? // @ts-ignore
+						  (this.logger.warn('♻ No YAML file found, creating it.'),
+						  writeFileSync('./swagger.yaml', generatedYAML, 'utf8'),
+						  res.end(generatedYAML))
+						: ((swYAML = YAML.load(readFileSync('./swagger.yaml', 'utf8'))),
+						  // @ts-ignore
+						  this.logger.debug('♻ Checking if Swagger YAML schema needs updating...'),
+						  isEqual(swYAML, swJSON)
+								? // @ts-ignore
+								  (this.logger.debug(
+										'♻ No changes needed, swagger YAML schema has the correct values',
+								  ),
+								  res.end(generatedYAML))
+								: // @ts-ignore
+								  (this.logger.debug(
+										'♻ Swagger YAML schema needs updating, updating file...',
+								  ),
+								  writeFileSync('./swagger.yaml', generatedYAML, 'utf8'),
+								  // @ts-ignore
+								  this.logger.debug('♻ Updated swagger YAML'),
+								  res.end(generatedYAML)));
 				} catch (err) {
 					throw new MoleculerServerError(
 						`♻ Error updating swagger YAML schema`,
@@ -206,30 +169,28 @@ export const editorMixin = (mixinOptions?: any) => {
 			);
 			replaceInFile({ dry: true, countMatches: true, ...options })
 				.then((results) => {
-					if (results[0]['hasChanged'] === true) {
-						// @ts-ignore
-						this.logger.debug(
-							`♻ Found matches in swagger editor html, updating file...`,
-						);
-						replaceInFile(options)
-							.then(
-								// @ts-ignore
-								this.logger.debug(
-									`♻ Updated swagger editor html at ${pathToSwaggerEitorHtml}`,
-								),
-							)
-							.catch((err) =>
-								// @ts-ignore
-								this.logger.error(
-									`♻ Error updating swagger editor html at ${pathToSwaggerEitorHtml}: ${err}`,
-								),
-							);
-					} else {
-						// @ts-ignore
-						this.logger.debug(
-							'♻ No changes needed, swagger editor html has the correct values',
-						);
-					}
+					results[0]['hasChanged'] === true
+						? // @ts-ignore
+						  (this.logger.debug(
+								`♻ Found matches in swagger editor html, updating file...`,
+						  ),
+						  replaceInFile(options)
+								.then(
+									// @ts-ignore
+									this.logger.debug(
+										`♻ Updated swagger editor html at ${pathToSwaggerEitorHtml}`,
+									),
+								)
+								.catch((err) =>
+									// @ts-ignore
+									this.logger.error(
+										`♻ Error updating swagger editor html at ${pathToSwaggerEitorHtml}: ${err}`,
+									),
+								))
+						: // @ts-ignore
+						  this.logger.debug(
+								'♻ No changes needed, swagger editor html has the correct values',
+						  );
 				})
 				.catch((err) => {
 					// @ts-ignore

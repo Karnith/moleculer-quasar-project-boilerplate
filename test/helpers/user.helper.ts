@@ -72,10 +72,7 @@ export async function getJWT(
 	const loginUrl = '/auth/login';
 	// deepcode ignore NoHardcodedCredentials: <please specify a reason of ignoring this>
 	const response = await request(server).post(loginUrl).send({ login, password });
-	if (response.status !== 200 && round < 2) {
-		round && console.log('loop login', round);
-		return getJWT(server, login, password, round++);
-	} else {
-		return response.header.authorization;
-	}
+	return response.status !== 200 && round < 2
+		? (round && console.log('loop login', round), getJWT(server, login, password, round++))
+		: response.header.authorization;
 }

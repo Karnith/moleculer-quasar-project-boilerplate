@@ -40,43 +40,40 @@ export const openAPIMixin = (mixinOptions?: any) => {
 				try {
 					ctx.meta.$responseType = 'application/json';
 					const swJSONFile = existsSync('./swagger.json');
+					let swJSON;
 					// @ts-ignore
 					const generatedScheme = this.generateOpenAPISchema();
-					if (!swJSONFile) {
-						// @ts-ignore
-						this.logger.warn('♻ No Swagger JSON file found, creating it.');
-						writeFileSync(
-							'./swagger.json',
-							JSON.stringify(generatedScheme, null, 4),
-							'utf8',
-						);
-						// @ts-ignore
-						return generatedScheme;
-					} else {
-						const swJSON = require('../../swagger.json');
-						// @ts-ignore
-						this.logger.debug('♻ Checking if Swagger JSON schema needs updating...');
-						if (isEqual(swJSON, generatedScheme)) {
-							// @ts-ignore
-							this.logger.debug(
-								'♻ No changes needed, swagger json schema has the correct values',
-							);
-							return generatedScheme;
-						} else {
-							// @ts-ignore
-							this.logger.debug(
-								'♻ Swagger JSON schema needs updating, updating file...',
-							);
-							writeFileSync(
+
+					return !swJSONFile
+						? // @ts-ignore
+						  (this.logger.warn('♻ No Swagger JSON file found, creating it.'),
+						  writeFileSync(
 								'./swagger.json',
 								JSON.stringify(generatedScheme, null, 4),
 								'utf8',
-							);
-							// @ts-ignore
-							this.logger.debug(`♻ Updated swagger JSON`);
-							return generatedScheme;
-						}
-					}
+						  ),
+						  generatedScheme)
+						: ((swJSON = require('../../swagger.json')),
+						  // @ts-ignore
+						  this.logger.debug('♻ Checking if Swagger JSON schema needs updating...'),
+						  isEqual(swJSON, generatedScheme)
+								? // @ts-ignore
+								  (this.logger.debug(
+										'♻ No changes needed, swagger json schema has the correct values',
+								  ),
+								  generatedScheme)
+								: // @ts-ignore
+								  (this.logger.debug(
+										'♻ Swagger JSON schema needs updating, updating file...',
+								  ),
+								  writeFileSync(
+										'./swagger.json',
+										JSON.stringify(generatedScheme, null, 4),
+										'utf8',
+								  ),
+								  // @ts-ignore
+								  this.logger.debug(`♻ Updated swagger JSON`),
+								  generatedScheme));
 				} catch (err) {
 					throw new MoleculerServerError(
 						'♻ Error updating swagger JSON schema',
@@ -106,28 +103,28 @@ export const openAPIMixin = (mixinOptions?: any) => {
 			);
 			replaceInFile({ dry: true, countMatches: true, ...options })
 				.then((results) => {
-					if (results[0]['hasChanged'] === true) {
-						// @ts-ignore
-						this.logger.debug(`♻ Found matches in swagger initalize, updating file...`);
-						replaceInFile(options)
-							.then(
-								// @ts-ignore
-								this.logger.debug(
-									`♻ Updated swagger initalize at ${pathToSwaggerUi}/swagger-initializer.js`,
-								),
-							)
-							.catch((err) =>
-								// @ts-ignore
-								this.logger.error(
-									`♻ Error updating swagger initalize at ${pathToSwaggerUi}/swagger-initializer.js: ${err}`,
-								),
-							);
-					} else {
-						// @ts-ignore
-						this.logger.debug(
-							'♻ No changes needed, swagger initialize has the correct values',
-						);
-					}
+					results[0]['hasChanged'] === true
+						? // @ts-ignore
+						  (this.logger.debug(
+								`♻ Found matches in swagger initalize, updating file...`,
+						  ),
+						  replaceInFile(options)
+								.then(
+									// @ts-ignore
+									this.logger.debug(
+										`♻ Updated swagger initalize at ${pathToSwaggerUi}/swagger-initializer.js`,
+									),
+								)
+								.catch((err) =>
+									// @ts-ignore
+									this.logger.error(
+										`♻ Error updating swagger initalize at ${pathToSwaggerUi}/swagger-initializer.js: ${err}`,
+									),
+								))
+						: // @ts-ignore
+						  this.logger.debug(
+								'♻ No changes needed, swagger initialize has the correct values',
+						  );
 				})
 				.catch((err) => {
 					// @ts-ignore
