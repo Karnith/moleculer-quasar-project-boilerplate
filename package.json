@@ -109,6 +109,9 @@
 		"coverageDirectory": "<rootDir>/coverage",
 		"testEnvironment": "node",
 		"collectCoverage": false,
+		"coveragePathIgnorePatterns": [
+			"<rootDir>/moleculer.config.ts"
+		],
 		"reporters": [
 			"default",
 			"jest-junit"

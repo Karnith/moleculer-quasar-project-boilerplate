@@ -290,7 +290,7 @@ export default class UserService extends BaseServiceWithDB<UserServiceSettingsOp
 
 		this.logger.debug('♻ User login and email not duplicated, continuing with user creation');
 		entity.password = encryptPassword(entity.password);
-		entity.roles = JSON.parse(Config.defaultRoles);
+		entity.roles = JSON.parse(Config.DEFAULT_ROLES);
 
 		const parsedEntity = this.removeForbiddenFields<IUser>(
 			new JsonConvert().deserializeObject(entity, UserEntity).getMongoEntity(),
@@ -299,7 +299,7 @@ export default class UserService extends BaseServiceWithDB<UserServiceSettingsOp
 		const modEntity = this.updateAuthor(parsedEntity, { creator: ctx.meta.user || null });
 		const addVerificationToken = this.addVerificationToken(
 			modEntity,
-			Boolean(Config.registrationTokenRequired),
+			Boolean(Config.REGISTRATION_TOKEN_REQUIRED),
 		);
 		this.logger.debug('♻ Creating user...');
 		return this._create(ctx, addVerificationToken);
@@ -546,14 +546,10 @@ export default class UserService extends BaseServiceWithDB<UserServiceSettingsOp
 		);
 		const modEntity = this.updateAuthor<IUser>(parsedEntity, { creator: ctx.meta.user });
 		const requireToken = () => {
-			if (
-				entity.hasOwnProperty('requireRegToken') &&
+			return entity.hasOwnProperty('requireRegToken') &&
 				typeof entity.requireRegToken === 'boolean'
-			) {
-				return entity.requireRegToken;
-			} else {
-				return JSON.parse(Config.registrationTokenRequired);
-			}
+				? entity.requireRegToken
+				: JSON.parse(Config.REGISTRATION_TOKEN_REQUIRED);
 		};
 		const addVerificationToken = this.addVerificationToken(modEntity, requireToken());
 		this.logger.debug('♻ Creating user');
@@ -987,13 +983,10 @@ export default class UserService extends BaseServiceWithDB<UserServiceSettingsOp
 	// eslint-disable-next-line @typescript-eslint/naming-convention
 	private addVerificationToken(user: IUser, requireToken: boolean) {
 		let result = { ...user } as IUser;
-		if (requireToken) {
-			this.logger.debug('♻ Adding verification token');
-			result = { ...result, verificationToken: randomstring.generate(64) };
-		} else {
-			this.logger.debug('♻ Setting user to active');
-			result.active = true;
-		}
+		requireToken
+			? (this.logger.debug('♻ Adding verification token'),
+			  (result = { ...result, verificationToken: randomstring.generate(64) }))
+			: (this.logger.debug('♻ Setting user to active'), (result.active = true));
 		return result;
 	}
 }

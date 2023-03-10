@@ -33,7 +33,8 @@ const getValue = (value: string, context: CastingContext): unknown => {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 		return result;
 	} catch (err) {
-		console.log('getValue error: ', err);
+		// @ts-ignore
+		this.logger.error('getValue error: ', err);
 		return;
 	}
 };
@@ -70,7 +71,8 @@ export const dbSeed =
 			}
 			return;
 		} catch (err) {
-			console.log('dbSeed Error: ', err);
+			// @ts-ignore
+			this.logger.error('dbSeed Error: ', err);
 			return;
 		}
 	};

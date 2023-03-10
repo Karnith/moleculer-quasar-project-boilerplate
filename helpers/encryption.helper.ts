@@ -47,10 +47,12 @@ export class EncryptionUtils {
 			// random salt
 			const salt = crypto.randomBytes(64);
 
-			// derive encryption key: 32 byte key length
-			// in assumption the masterkey is a cryptographic and NOT a password there is no need for
-			// a large number of iterations. It may can replaced by HKDF
-			// the value of 2145 is randomly chosen!
+			/**
+			 * derive encryption key: 32 byte key length
+			 * in assumption the masterkey is a cryptographic and NOT a password there is no need for
+			 * a large number of iterations. It may can replaced by HKDF
+			 * the value of 2145 is randomly chosen!
+			 */
 			const key = crypto.pbkdf2Sync(
 				Buffer.from(String(Config.ENCRYPTION_KEY)),
 				salt,

@@ -10,25 +10,9 @@ export const updateAuthor = <T extends Record<string, any>>(
 	const { creator, modifier } = mod;
 	let result = { ...record };
 	creator ? (result = { ...result, createdBy: creator._id, createdDate: new Date() }) : null;
-	/* if (creator || creator == null || creator == undefined) {
-			if (creator != null || creator != undefined) {
-				result = { ...result, createdBy: creator._id, createdDate: new Date() };
-			} else {
-				if (!result.createdDate) {
-					result = { ...result, createdBy: null, createdDate: new Date() };
-				}
-			}
-		} */
 	modifier
 		? (result = { ...result, lastModifiedBy: modifier._id, lastModifiedDate: new Date() })
 		: null;
-	/* if (modifier || modifier == null || modifier == undefined) {
-			if (modifier != null || modifier != undefined) {
-				result = { ...result, lastModifiedBy: modifier._id, lastModifiedDate: new Date() };
-			} else {
-				result = { ...result, lastModifiedBy: null, lastModifiedDate: new Date() };
-			}
-		} */
 	return result;
 };
 
