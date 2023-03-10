@@ -418,7 +418,7 @@ describe('Unit tests for User service', () => {
 		let context: Context<UserGetParams, UserAuthMeta>;
 		beforeEach(() => {
 			context = new Context<UserGetParams, UserAuthMeta>(broker, endpoint);
-			context.action = { name: `v${service.version}.user.get.id` };
+			context.action = { name: `v${service.version}.user.get` };
 		});
 		it('not found', async () => {
 			context.meta = { user: superAdminUser };
@@ -521,7 +521,7 @@ describe('Unit tests for User service', () => {
 			try {
 				const contextUser = new Context<UserGetParams, UserAuthMeta>(broker, endpoint);
 				contextUser.meta = { user: superAdminUser };
-				contextUser.action = { name: `v${service.version}.user.get.id` };
+				contextUser.action = { name: `v${service.version}.user.get` };
 				contextUser.params = { id: adminUser._id };
 				// await broker.call('v${service.version}.user.get.id', { id: adminUser._id });
 				await service.getUserId(contextUser);

@@ -71,6 +71,7 @@ const encryptPassword = (password: string) =>
 @Service<UsersServiceOptions>({
 	name: 'user',
 	version: 1,
+	mergeActions: true,
 	/**
 	 * Service guard token
 	 */
@@ -120,6 +121,11 @@ const encryptPassword = (password: string) =>
 	},
 })
 export default class UserService extends BaseServiceWithDB<UserServiceSettingsOptions, IUser> {
+	/**
+	 * Needed for population of created by and modified by.
+	 * Use this action for any call from broker to this service for population.
+	 * using the get action getUser will cause a populaiton loop.
+	 */
 	@Action({
 		name: 'id',
 		restricted: ['api', 'user', 'roles', 'auth'],
@@ -630,9 +636,9 @@ export default class UserService extends BaseServiceWithDB<UserServiceSettingsOp
 	 *          content: {}
 	 */
 	@Get<RestOptions>('/:id', {
-		name: 'get.id',
+		name: 'get',
 		restricted: ['api'],
-		roles: UserRoleDefault.SUPERADMIN,
+		roles: [UserRoleDefault.SUPERADMIN, UserRoleDefault.ADMIN],
 		...getActionConfig,
 	})
 	async getUser(ctx: Context<UserGetParams, UserAuthMeta>) {
