@@ -76,15 +76,16 @@ const validateRoleBase: ActionParams = {
 			'lastModifiedDate',
 			'systemLocked',
 		],
+		// additional fields added to responses
 		populates: {
 			createdBy: {
 				action: 'v1.user.id',
-				params: { fields: ['login', 'firstName', 'lastName'] },
+				params: { fields: ['_id', 'login', 'firstName', 'lastName'] },
 				// params: { fields: 'login firstName lastName' },
 			},
 			lastModifiedBy: {
 				action: 'v1.user.id',
-				params: { fields: ['login', 'firstName', 'lastName'] },
+				params: { fields: ['_id', 'login', 'firstName', 'lastName'] },
 			},
 		},
 		// Base path

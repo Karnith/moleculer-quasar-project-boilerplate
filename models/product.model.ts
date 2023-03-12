@@ -1,7 +1,7 @@
 import { model, models, Schema, Types } from 'mongoose';
 import { definitionType, IProduct } from '../types';
 
-const definition: definitionType<IProduct> = () => ({
+const definition: definitionType<IProduct> = (collection?: string) => ({
 	_id: Types.ObjectId,
 	name: {
 		type: String,
@@ -13,12 +13,32 @@ const definition: definitionType<IProduct> = () => ({
 	},
 	quantity: {
 		type: Number,
-		required: true,
 		min: 0,
 	},
 	price: {
 		type: Number,
+	},
+	active: {
+		type: Boolean,
+		default: false,
+	},
+	createdBy: {
+		type: Types.ObjectId,
+		ref: collection,
 		required: true,
+	},
+	createdDate: {
+		type: Date,
+		default: Date.now,
+	},
+	lastModifiedBy: {
+		type: Types.ObjectId,
+		ref: collection,
+		required: false,
+	},
+	lastModifiedDate: {
+		type: Date,
+		required: false,
 	},
 });
 
@@ -26,7 +46,7 @@ export const productMongoModel = (collection: string): unknown => {
 	try {
 		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 		// @ts-ignore
-		const schema = new Schema<IProduct>(definition(), { autoIndex: true });
+		const schema = new Schema<IProduct>(definition(collection), { autoIndex: true });
 		return models[collection] || model(collection, schema);
 	} catch (err) {
 		console.log('Product Model error: ', err);

@@ -35,6 +35,11 @@ export const swComponents = {
 					description: 'Cost of product',
 					example: 875,
 				},
+				active: {
+					type: 'boolean',
+					description: 'Product active',
+					example: false,
+				},
 			},
 		},
 		User: {

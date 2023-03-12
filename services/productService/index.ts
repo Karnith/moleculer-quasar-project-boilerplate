@@ -1,17 +1,32 @@
 /* eslint-disable @typescript-eslint/explicit-member-accessibility */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 ('use strict');
-import { Context } from 'moleculer';
-import { Put, Method, Service } from '@ourparentcenter/moleculer-decorators-extended';
+import moleculer, { ActionParams, Context } from 'moleculer';
+import { Put, Method, Service, Post } from '@ourparentcenter/moleculer-decorators-extended';
 import { Config } from '../../common';
 import {
 	IProduct,
+	ProductCreateParams,
+	productErrorCode,
+	productErrorMessage,
 	ProductServiceSettingsOptions,
 	ProductsManipulateValueParams,
 	ProductsServiceOptions,
 	RestOptions,
+	UserAuthMeta,
+	UserRoleDefault,
 } from '../../types';
 import { BaseServiceWithDB, DBMixinFactory } from '@Factories';
+import { JsonConvert } from 'json2typescript';
+import { IUserRole, ProductEntity } from '@Entities';
+import { constants } from 'http2';
+
+const validateRoleBase: ActionParams = {
+	name: { type: 'string', optional: true },
+	quantity: { type: 'number', optional: true },
+	price: { type: 'number', optional: true },
+	active: { type: 'boolean', optional: true },
+};
 
 /**
  * @typedef {import('moleculer').Context} Context Moleculer's Context
@@ -33,15 +48,39 @@ import { BaseServiceWithDB, DBMixinFactory } from '@Factories';
 	settings: {
 		idField: '_id',
 		// Available fields in the responses
-		fields: ['_id', 'name', 'quantity', 'price'],
+		fields: [
+			'_id',
+			'name',
+			'quantity',
+			'price',
+			'active',
+			'createdBy',
+			'createdDate',
+			'lastModifiedBy',
+			'lastModifiedDate',
+		],
+		// additional fields added to responses
+		populates: {
+			createdBy: {
+				action: 'v1.user.id',
+				params: { fields: ['_id', 'login', 'firstName', 'lastName'] },
+				// params: { fields: 'login firstName lastName' },
+			},
+			lastModifiedBy: {
+				action: 'v1.user.id',
+				params: { fields: ['_id', 'login', 'firstName', 'lastName'] },
+			},
+		},
 		// Base path
 		rest: '/',
 		// rest: '/v1/products',
 		// Validator for the `create` & `insert` actions.
-		entityValidator: {
+		/* entityValidator: {
 			name: 'string|min:3',
+			quantity: 'number|positive',
 			price: 'number|positive',
-		},
+			active: 'boolean',
+		}, */
 	},
 	/**
 	 * Action Hooks
@@ -55,18 +94,147 @@ import { BaseServiceWithDB, DBMixinFactory } from '@Factories';
 			 * @param {Context} ctx
 			 */
 			// @ts-ignore
-			create: (ctx: Context<{ quantity: number }>) => {
-				// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-				// @ts-ignore
-				ctx.params.quantity = 0;
+			create: (ctx: Context<{ price: number; quantity: number; active: boolean }>) => {
+				if (!ctx.params.price) {
+					ctx.params.price = 0;
+				}
+				if (!ctx.params.quantity) {
+					ctx.params.quantity = 0;
+				}
+				if (!ctx.params.active) {
+					ctx.params.active = false;
+				}
 			},
 		},
 	},
 })
 export default class ProductService extends BaseServiceWithDB<
 	ProductServiceSettingsOptions,
-	IProduct
+	IUserRole
 > {
+	/**
+	 *  @swagger
+	 *
+	 *  /api/v1/products:
+	 *    post:
+	 *      tags:
+	 *      - "Products"
+	 *      summary: Create a product
+	 *      description: Create a product
+	 *      operationId: createProduct
+	 *      requestBody:
+	 *        required: true
+	 *        content:
+	 *          application/json:
+	 *            schema:
+	 *              required:
+	 *              - name
+	 *              type: object
+	 *              properties:
+	 *                name:
+	 *                  type: string
+	 *                  description: Name to be used
+	 *                  example: product name
+	 *                price:
+	 *                  type: number
+	 *                  description: Price of product
+	 *                  example: 5.00
+	 *                quantity:
+	 *                  type: number
+	 *                  description: Quantity of product
+	 *                  example: 5
+	 *                active:
+	 *                  type: boolean
+	 *                  description: Quantity of product
+	 *                  example: false
+	 *      responses:
+	 *        200:
+	 *          description: Create product result
+	 *          content:
+	 *            application/json:
+	 *              schema:
+	 *                allOf:
+	 *                - type: object
+	 *                  properties:
+	 *                    _id:
+	 *                      type: string
+	 *                - $ref: '#/components/schemas/Product'
+	 *        422:
+	 *          description: Missing parameters
+	 *          content: {}
+	 *      x-codegen-request-body-name: params
+	 */
+	@Post<RestOptions>('/', {
+		name: 'create',
+		/**
+		 * Service guard services allowed to connect
+		 */
+		restricted: ['api'],
+		// roles: [UserRoleDefault.SUPERADMIN, UserRoleDefault.ADMIN],
+		params: {
+			...validateRoleBase,
+		},
+	})
+	async createProduct(ctx: Context<ProductCreateParams, UserAuthMeta>) {
+		this.logger.debug(`♻ Attempting to create product...`);
+		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+		// @ts-ignore
+		const product: ProductUpdateParams = await this.adapter.findOne<IProduct>({
+			name: ctx.params.name!,
+		});
+		if (product) {
+			this.logger.debug(
+				`♻ Role ${ctx.params.name} with id ${product.id} already exists. Please update it instead.`,
+			);
+			throw new moleculer.Errors.MoleculerClientError(
+				productErrorMessage.DUPLICATED_NAME,
+				productErrorCode.DUPLICATED_NAME,
+				'',
+				`♻ Role ${ctx.params.name} with id ${product.id} already exists. Please update it instead.`,
+			);
+		}
+		this.logger.debug(`♻ Creating product ${ctx.params.name}`);
+		const parsedEntity = this.removeForbiddenFields<IProduct>(
+			new JsonConvert().deserializeObject({ ...ctx.params }, ProductEntity).getMongoEntity(),
+			['_id', 'createdBy', 'createdDate', 'lastModifiedBy', 'lastModifiedDate'],
+		);
+		const newProduct = this.updateAuthor<IUserRole>(parsedEntity, {
+			creator: ctx.meta.user || null,
+			modifier: ctx.meta.user || null,
+		});
+
+		const result = await this._create(ctx, newProduct)
+			.then((res) => {
+				if (res) {
+					this.logger.debug(`♻ Role ${ctx.params.name} created successfully.`);
+					ctx.meta.$statusCode = constants.HTTP_STATUS_ACCEPTED;
+					this.broker.emit('roles.created', res);
+					return res;
+				}
+				this.logger.debug(`♻ Role ${ctx.params.name} could not be created.`);
+				throw new moleculer.Errors.MoleculerClientError(
+					productErrorMessage.PRODUCT_NOT_CREATED,
+					productErrorCode.PRODUCT_NOT_CREATED,
+				);
+			})
+			.catch((err) => {
+				this.logger.debug(`♻ Role ${ctx.params.name} could not be created.`);
+				throw new moleculer.Errors.MoleculerClientError(
+					productErrorMessage.PRODUCT_NOT_CREATED,
+					productErrorCode.PRODUCT_NOT_CREATED,
+					err,
+				);
+			});
+		const transform = await this.transformDocuments(
+			ctx,
+			{ populate: ['createdBy', 'lastModifiedBy'] },
+			// {},
+			result,
+		);
+		this.logger.debug('♻ Returning new product: ', transform);
+		return transform;
+	}
+
 	/**
 	 *  @swagger
 	 *
@@ -276,51 +444,6 @@ export default class ProductService extends BaseServiceWithDB<
 	 *        403:
 	 *          description: Server error
 	 *          content: {}
-	 */
-
-	/**
-	 *  @swagger
-	 *
-	 *  /api/v1/products:
-	 *    post:
-	 *      tags:
-	 *      - "Products"
-	 *      summary: Create a product (auto generated)
-	 *      description: Create a product
-	 *      requestBody:
-	 *        required: true
-	 *        content:
-	 *          application/json:
-	 *            schema:
-	 *              required:
-	 *              - name
-	 *              - price
-	 *              type: object
-	 *              properties:
-	 *                name:
-	 *                  type: string
-	 *                  description: Name to be used
-	 *                  example: product name
-	 *                price:
-	 *                  type: number
-	 *                  description: Price of product
-	 *                  example: 5.00
-	 *      responses:
-	 *        200:
-	 *          description: Create product result
-	 *          content:
-	 *            application/json:
-	 *              schema:
-	 *                allOf:
-	 *                - type: object
-	 *                  properties:
-	 *                    _id:
-	 *                      type: string
-	 *                - $ref: '#/components/schemas/Product'
-	 *        422:
-	 *          description: Missing parameters
-	 *          content: {}
-	 *      x-codegen-request-body-name: params
 	 */
 
 	/**

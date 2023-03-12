@@ -22,3 +22,25 @@ export interface ProductsRecordParams {
 	name: string;
 	price: number;
 }
+
+export interface IProductBase {
+	name?: string;
+	quantity?: number;
+	price?: number;
+	active?: boolean;
+}
+
+export interface ProductCreateParams extends IProductBase {
+	name?: string;
+	quantity?: number;
+	price?: number;
+	active?: boolean;
+}
+
+export interface ProductUpdateParams extends Partial<IProduct> {
+	id: string;
+	name?: string;
+	quantity?: number;
+	price?: number;
+	active?: boolean;
+}

@@ -46,6 +46,11 @@
                         "type": "number",
                         "description": "Cost of product",
                         "example": 875
+                    },
+                    "active": {
+                        "type": "boolean",
+                        "description": "Product active",
+                        "example": false
                     }
                 }
             },
@@ -211,6 +216,139 @@
                 "x-codegen-request-body-name": "params"
             }
         },
+        "/api/v1/products": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Create a product",
+                "description": "Create a product",
+                "operationId": "createProduct",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "description": "Name to be used",
+                                        "example": "product name"
+                                    },
+                                    "price": {
+                                        "type": "number",
+                                        "description": "Price of product",
+                                        "example": 5
+                                    },
+                                    "quantity": {
+                                        "type": "number",
+                                        "description": "Quantity of product",
+                                        "example": 5
+                                    },
+                                    "active": {
+                                        "type": "boolean",
+                                        "description": "Quantity of product",
+                                        "example": false
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Create product result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "allOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "_id": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/Product"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Missing parameters",
+                        "content": {}
+                    }
+                },
+                "x-codegen-request-body-name": "params"
+            },
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get all products (auto generated)",
+                "description": "Get all products",
+                "responses": {
+                    "200": {
+                        "description": "Products result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "rows": {
+                                            "type": "array",
+                                            "items": {
+                                                "allOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "_id": {
+                                                                "type": "string"
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        "$ref": "#/components/schemas/Product"
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "number",
+                                            "description": "Products result count"
+                                        },
+                                        "page": {
+                                            "type": "number",
+                                            "description": "Products result page"
+                                        },
+                                        "pageSize": {
+                                            "type": "number",
+                                            "description": "Products result page size max"
+                                        },
+                                        "totalPages": {
+                                            "type": "number",
+                                            "description": "Products result total pages"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Server error",
+                        "content": {}
+                    }
+                }
+            }
+        },
         "/api/v1/products/{id}/quantity/increase": {
             "put": {
                 "tags": [
@@ -322,129 +460,6 @@
                 "responses": {
                     "200": {
                         "description": "Decreased quantity result",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "allOf": [
-                                        {
-                                            "type": "object",
-                                            "properties": {
-                                                "_id": {
-                                                    "type": "string"
-                                                }
-                                            }
-                                        },
-                                        {
-                                            "$ref": "#/components/schemas/Product"
-                                        }
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Missing parameters",
-                        "content": {}
-                    }
-                },
-                "x-codegen-request-body-name": "params"
-            }
-        },
-        "/api/v1/products": {
-            "get": {
-                "tags": [
-                    "Products"
-                ],
-                "summary": "Get all products (auto generated)",
-                "description": "Get all products",
-                "responses": {
-                    "200": {
-                        "description": "Products result",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "rows": {
-                                            "type": "array",
-                                            "items": {
-                                                "allOf": [
-                                                    {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "_id": {
-                                                                "type": "string"
-                                                            }
-                                                        }
-                                                    },
-                                                    {
-                                                        "$ref": "#/components/schemas/Product"
-                                                    }
-                                                ]
-                                            }
-                                        },
-                                        "total": {
-                                            "type": "number",
-                                            "description": "Products result count"
-                                        },
-                                        "page": {
-                                            "type": "number",
-                                            "description": "Products result page"
-                                        },
-                                        "pageSize": {
-                                            "type": "number",
-                                            "description": "Products result page size max"
-                                        },
-                                        "totalPages": {
-                                            "type": "number",
-                                            "description": "Products result total pages"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Server error",
-                        "content": {}
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "Products"
-                ],
-                "summary": "Create a product (auto generated)",
-                "description": "Create a product",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "name",
-                                    "price"
-                                ],
-                                "type": "object",
-                                "properties": {
-                                    "name": {
-                                        "type": "string",
-                                        "description": "Name to be used",
-                                        "example": "product name"
-                                    },
-                                    "price": {
-                                        "type": "number",
-                                        "description": "Price of product",
-                                        "example": 5
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Create product result",
                         "content": {
                             "application/json": {
                                 "schema": {

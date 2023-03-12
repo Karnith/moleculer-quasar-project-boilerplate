@@ -162,7 +162,6 @@ describe('Unit tests for User service', () => {
 	describe('create user', () => {
 		let user: IUserBase;
 		let context: any;
-		let verificationToken: string;
 		beforeEach(() => {
 			const str = randString();
 			user = {
