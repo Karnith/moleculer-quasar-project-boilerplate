@@ -2,13 +2,15 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 ('use strict');
 import moleculer, { ActionParams, Context } from 'moleculer';
-import { Put, Method, Service, Post } from '@ourparentcenter/moleculer-decorators-extended';
+import { Put, Method, Service, Post, Delete } from '@ourparentcenter/moleculer-decorators-extended';
 import { Config } from '../../common';
 import {
 	IProduct,
 	ProductCreateParams,
+	ProductDeleteParams,
 	productErrorCode,
 	productErrorMessage,
+	ProductEvent,
 	ProductServiceSettingsOptions,
 	ProductsManipulateValueParams,
 	ProductsServiceOptions,
@@ -170,7 +172,7 @@ export default class ProductService extends BaseServiceWithDB<
 		 * Service guard services allowed to connect
 		 */
 		restricted: ['api'],
-		// roles: [UserRoleDefault.SUPERADMIN, UserRoleDefault.ADMIN],
+		roles: [UserRoleDefault.SUPERADMIN, UserRoleDefault.ADMIN],
 		params: {
 			...validateRoleBase,
 		},
@@ -190,7 +192,7 @@ export default class ProductService extends BaseServiceWithDB<
 				productErrorMessage.DUPLICATED_NAME,
 				productErrorCode.DUPLICATED_NAME,
 				'',
-				`♻ Role ${ctx.params.name} with id ${product.id} already exists. Please update it instead.`,
+				`♻ Product ${ctx.params.name} with id ${product.id} already exists. Please update it instead.`,
 			);
 		}
 		this.logger.debug(`♻ Creating product ${ctx.params.name}`);
@@ -204,21 +206,21 @@ export default class ProductService extends BaseServiceWithDB<
 		});
 
 		const result = await this._create(ctx, newProduct)
-			.then((res) => {
-				if (res) {
-					this.logger.debug(`♻ Role ${ctx.params.name} created successfully.`);
-					ctx.meta.$statusCode = constants.HTTP_STATUS_ACCEPTED;
-					this.broker.emit('roles.created', res);
-					return res;
-				}
-				this.logger.debug(`♻ Role ${ctx.params.name} could not be created.`);
+			.then(async (res) => {
+				// if (res) {
+				this.logger.debug(`♻ Product ${ctx.params.name} created successfully.`);
+				ctx.meta.$statusCode = constants.HTTP_STATUS_ACCEPTED;
+				await this.broker.emit(ProductEvent.CREATED, res);
+				return res;
+				/* }
+				this.logger.debug(`♻ Product ${ctx.params.name} could not be created.`);
 				throw new moleculer.Errors.MoleculerClientError(
 					productErrorMessage.PRODUCT_NOT_CREATED,
 					productErrorCode.PRODUCT_NOT_CREATED,
-				);
+				); */
 			})
 			.catch((err) => {
-				this.logger.debug(`♻ Role ${ctx.params.name} could not be created.`);
+				this.logger.debug(`♻ Product ${ctx.params.name} could not be created.`);
 				throw new moleculer.Errors.MoleculerClientError(
 					productErrorMessage.PRODUCT_NOT_CREATED,
 					productErrorCode.PRODUCT_NOT_CREATED,
@@ -370,19 +372,6 @@ export default class ProductService extends BaseServiceWithDB<
 		await this.entityChanged('updated', json, ctx);
 		return json;
 	}
-	/**
-	 * Loading sample data to the collection.
-	 * It is called in the DB.mixin after the database
-	 * connection establishing & the collection is empty.
-	 */
-	/* @Method
-	async seedDB() {
-		await this.adapter.insertMany([
-			{ name: 'Samsung Galaxy S10 Plus', quantity: 10, price: 704 },
-			{ name: 'iPhone 11 Pro', quantity: 25, price: 999 },
-			{ name: 'Huawei P30 Pro', quantity: 15, price: 679 },
-		]);
-	} */
 
 	/**
 	 * Fired after database connection establishing.
@@ -397,7 +386,6 @@ export default class ProductService extends BaseServiceWithDB<
 	 *  - list
 	 *  - find
 	 *  - count
-	 *  - create
 	 *  - insert
 	 *  - update
 	 *  - remove
@@ -532,8 +520,9 @@ export default class ProductService extends BaseServiceWithDB<
 	 *    delete:
 	 *      tags:
 	 *      - "Products"
-	 *      summary: Delete a product (auto generated)
+	 *      summary: Delete a product
 	 *      description: Delete product by id
+	 *      operationId: removeProduct
 	 *      parameters:
 	 *      - name: id
 	 *        in: path
@@ -550,4 +539,43 @@ export default class ProductService extends BaseServiceWithDB<
 	 *          description: Server error
 	 *          content: {}
 	 */
+	@Delete<RestOptions>('/:id', {
+		name: 'remove',
+		restricted: ['api'],
+		// roles: [UserRoleDefault.SUPERADMIN, UserRoleDefault.ADMIN],
+		params: {
+			id: { type: 'string', min: 3 },
+		},
+	})
+	async removeProduct(ctx: Context<ProductDeleteParams, UserAuthMeta>) {
+		const { id } = ctx.params;
+		this.logger.debug('♻ Attempting to delete product...');
+		const recordToDelete = await this._get(ctx, { id: id })
+			.then((res) => {
+				this.logger.debug('♻ Product found');
+				return res;
+			})
+			.catch((err) => {
+				this.logger.error('♻ Product not found', err);
+				throw new moleculer.Errors.MoleculerClientError(
+					productErrorMessage.NOT_FOUND,
+					productErrorCode.NOT_FOUND,
+				);
+			});
+		return await this._remove(ctx, { id: id })
+			.then(async (record) => {
+				this.logger.debug('♻ Role deleted successfully');
+				ctx.meta.$statusCode = constants.HTTP_STATUS_ACCEPTED;
+				await this.broker.emit(ProductEvent.DELETED, { id: id });
+				return { recordsDeleted: record, record: recordToDelete };
+			})
+			.catch((err) => {
+				this.logger.error('♻ Product deletion error:', err);
+				throw new moleculer.Errors.MoleculerClientError(
+					productErrorMessage.DELETE_FAILED,
+					productErrorCode.DELETE_FAILED,
+					err,
+				);
+			});
+	}
 }

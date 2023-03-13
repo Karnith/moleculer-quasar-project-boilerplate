@@ -1,5 +1,5 @@
 import { Options } from '@ourparentcenter/moleculer-decorators-extended';
-import { DbServiceSettings } from 'moleculer-db';
+import { DbContextParameters, DbServiceSettings } from 'moleculer-db';
 import { IProduct } from '../entities';
 
 export interface ProductServiceSettingsOptions extends DbServiceSettings {
@@ -43,4 +43,13 @@ export interface ProductUpdateParams extends Partial<IProduct> {
 	quantity?: number;
 	price?: number;
 	active?: boolean;
+}
+export enum ProductEvent {
+	CREATED = 'product.created',
+	DELETED = 'product.deleted',
+	UPDATED = 'product.updated',
+}
+
+export interface ProductDeleteParams extends DbContextParameters {
+	id: string;
 }

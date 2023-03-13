@@ -65,7 +65,7 @@ describe('Integration tests for Users service', () => {
 	let token = '';
 
 	beforeEach(async () => {
-		await clearDB(Config.DB_USER);
+		// await clearDB(Config.DB_USER);
 		if (!broker.started) {
 			await broker.start();
 		}

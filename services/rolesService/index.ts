@@ -413,7 +413,7 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 		 * Service guard services allowed to connect
 		 */
 		restricted: ['api'],
-		// roles: [UserRoleDefault.SUPERADMIN, UserRoleDefault.ADMIN],
+		roles: [UserRoleDefault.SUPERADMIN, UserRoleDefault.ADMIN],
 		params: {
 			...validateRoleBase,
 		},
@@ -451,7 +451,7 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 				if (res) {
 					this.logger.debug(`♻ Role ${ctx.params.role} created successfully.`);
 					ctx.meta.$statusCode = constants.HTTP_STATUS_ACCEPTED;
-					this.broker.emit('roles.created', res);
+					this.broker.emit(UserRoleEvent.CREATED, res);
 					return res;
 				}
 				this.logger.debug(`♻ Role ${ctx.params.role} could not be created.`);
@@ -644,7 +644,7 @@ export default class RolesService extends BaseServiceWithDB<RoleServiceSettingsO
 				if (res) {
 					this.logger.debug('♻ Role updated successfully');
 					ctx.meta.$statusCode = constants.HTTP_STATUS_ACCEPTED;
-					this.broker.emit('roles.updated', res);
+					this.broker.emit(UserRoleEvent.UPDATED, res);
 					return res;
 				}
 				this.logger.error('♻ Role update failed');

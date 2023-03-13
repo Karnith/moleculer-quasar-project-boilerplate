@@ -141,7 +141,21 @@ describe('Integration tests for Products service', () => {
 
 		it('should remove the updated item', async () => {
 			const res = await broker.call(`${version}.products.remove`, { id: newID });
-			expect(res).toBe(1);
+			expect(res)
+				.toBeObject()
+				.toContainEntries([
+					[
+						'record',
+						{
+							_id: newID,
+							active: false,
+							name: 'Awesome item',
+							price: 499,
+							quantity: 3,
+						},
+					],
+					['recordsDeleted', 1],
+				]);
 
 			const res2 = await broker.call(`${version}.products.count`);
 			expect(res2).toBe(0);

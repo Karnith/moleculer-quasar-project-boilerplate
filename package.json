@@ -110,7 +110,8 @@
 		"testEnvironment": "node",
 		"collectCoverage": false,
 		"coveragePathIgnorePatterns": [
-			"<rootDir>/moleculer.config.ts"
+			"<rootDir>/moleculer.config.ts",
+			"<rootDir>/middlewares/OpenInBrowser.ts"
 		],
 		"reporters": [
 			"default",

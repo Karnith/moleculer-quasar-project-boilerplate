@@ -395,8 +395,9 @@ paths:
     delete:
       tags:
         - Products
-      summary: Delete a product (auto generated)
+      summary: Delete a product
       description: Delete product by id
+      operationId: removeProduct
       parameters:
         - name: id
           in: path

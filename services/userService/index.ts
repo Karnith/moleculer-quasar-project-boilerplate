@@ -128,7 +128,7 @@ export default class UserService extends BaseServiceWithDB<UserServiceSettingsOp
 	 */
 	@Action({
 		name: 'id',
-		restricted: ['api', 'user', 'roles', 'auth'],
+		restricted: ['api', 'user', 'roles', 'products', 'auth'],
 		...getActionConfig,
 	})
 	async getUserId(ctx: Context<UserGetParams, UserAuthMeta>) {

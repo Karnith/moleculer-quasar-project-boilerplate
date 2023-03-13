@@ -55,7 +55,9 @@ describe('Unit tests for Roles service', () => {
 	let roleService: any;
 	const spyBroadcast = jest.spyOn(Context.prototype, 'broadcast');
 
-	beforeEach(async () => {
+	beforeAll(async () => {
+		/* await clearDB(Config.DB_ROLES);
+		await clearDB(Config.DB_USER); */
 		broker = new ServiceBroker(testConfig);
 		// broker = new ServiceBroker();
 		endpoint = {
@@ -69,8 +71,7 @@ describe('Unit tests for Roles service', () => {
 		userService = broker.createService(UserService);
 		roleService = broker.createService(TestingService);
 		// version = `vv${service.version}`;
-		await clearDB(Config.DB_ROLES);
-		await clearDB(Config.DB_USER);
+
 		await broker.start();
 		await broker.waitForServices([
 			`v${userService.version}.${userService.name}`,
