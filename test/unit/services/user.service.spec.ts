@@ -19,7 +19,7 @@ import {
 	UserUpdateParams,
 } from '../../../types';
 import { adminUser, disabledUser, simpleUser, superAdminUser } from '../../helpers/user.helper';
-import { clearDB, randString, testConfig } from '../../helpers/helper';
+import { clearDB, randString, testConfig, wait } from '../../helpers/helper';
 import { Config } from '../../../common';
 import 'jest-extended';
 import 'jest-chain';
@@ -40,7 +40,8 @@ describe('Unit tests for User service', () => {
 	let authService: any;
 	const spyBroadcast = jest.spyOn(Context.prototype, 'broadcast');
 
-	beforeEach(async () => {
+	beforeAll(async () => {
+		await wait(1);
 		broker = new ServiceBroker(testConfig);
 		// broker = new ServiceBroker();
 		endpoint = {

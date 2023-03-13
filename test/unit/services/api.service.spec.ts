@@ -3,7 +3,7 @@ import ApiGatewayService from 'moleculer-web';
 import TestingService from '../../../services/apiService';
 import { UserAuthMeta, UserLang, UserRoleDefault } from '../../../types';
 import { UserEntity } from '../../../entities';
-import { testConfig } from '../../helpers/helper';
+import { testConfig, wait } from '../../helpers/helper';
 import 'jest-extended';
 import 'jest-chain';
 const JEST_TIMEOUT = 35 * 1000;
@@ -20,6 +20,7 @@ describe('Unit tests for Api service', () => {
 		state: true,
 	};
 	beforeAll(async () => {
+		await wait(1);
 		await broker.start();
 		await broker.waitForServices(service.name);
 	});

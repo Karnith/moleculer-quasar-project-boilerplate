@@ -2,7 +2,7 @@
 
 // process.env.TEST = 'true';
 
-import { clearDB, testConfig } from '../../helpers/helper';
+import { clearDB, testConfig, wait } from '../../helpers/helper';
 import { Config } from '../../../common';
 import moleculer, { Context, Endpoint, Errors, ServiceBroker } from 'moleculer';
 import TestingService from '../../../services/productService';
@@ -46,6 +46,7 @@ describe("Test 'products' service", () => {
 		jest.spyOn(productService, 'entityChanged');
 
 		beforeAll(async () => {
+			await wait(1);
 			broker.start();
 			await broker.waitForServices([
 				`v${userService.version}.${userService.name}`,

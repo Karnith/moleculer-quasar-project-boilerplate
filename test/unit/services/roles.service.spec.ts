@@ -31,7 +31,7 @@ import {
 	superAdminUserRole,
 	testUserRole,
 } from '../../helpers/user.helper';
-import { clearDB, randString, testConfig } from '../../helpers/helper';
+import { clearDB, randString, testConfig, wait } from '../../helpers/helper';
 import { Config } from '../../../common';
 import 'jest-extended';
 import 'jest-chain';
@@ -56,6 +56,7 @@ describe('Unit tests for Roles service', () => {
 	const spyBroadcast = jest.spyOn(Context.prototype, 'broadcast');
 
 	beforeAll(async () => {
+		await wait(1);
 		/* await clearDB(Config.DB_ROLES);
 		await clearDB(Config.DB_USER); */
 		broker = new ServiceBroker(testConfig);

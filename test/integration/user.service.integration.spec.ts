@@ -59,13 +59,14 @@ const version = `v${testingService.version}`;
 const authversion = `v${authService.version}`;
 
 describe('Integration tests for Users service', () => {
-	let firstStart = true;
+	// let firstStart = true;
 	let server: string;
 	let testUrl = '';
 	let token = '';
 
-	beforeEach(async () => {
+	beforeAll(async () => {
 		// await clearDB(Config.DB_USER);
+		await wait(1);
 		if (!broker.started) {
 			await broker.start();
 		}
@@ -76,17 +77,17 @@ describe('Integration tests for Users service', () => {
 		]);
 
 		server = await getServer(apiService.server);
-		if (firstStart) {
+		/* if (firstStart) {
 			await wait(1);
 			// eslint-disable-next-line require-atomic-updates
 			firstStart = false;
-		}
+		} */
 	});
 
-	afterEach(async () => {
+	afterAll(async () => {
 		await broker.stop();
 		await clearDB(Config.DB_USER);
-		firstStart = true;
+		// firstStart = true;
 	});
 	beforeEach(() => expect.hasAssertions());
 
@@ -330,7 +331,7 @@ describe('Integration tests for Users service', () => {
 	});
 
 	describe('Delete User by id', () => {
-		beforeEach(async () => {
+		beforeAll(async () => {
 			testUrl = `/api/${version}/user/${disabledUser._id}`;
 			token = await getJWT(server);
 		});
